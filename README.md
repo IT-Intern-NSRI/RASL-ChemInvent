@@ -1,1 +1,289 @@
-# RASL-ChemInvent
+# Digital Chemical Inventory
+
+A web app version of **RASL Form 19, Appendix 4.5.1a** ("Quarterly Inventory
+of Priority Chemicals," U.P. NSRI) — the same categories, chemicals, and
+quarterly Current Inventory / For Purchase fields as the original Word
+form, but filterable, searchable, saveable, and exportable back to a
+Word document in the original layout.
+
+This started as a skeleton and is now a working implementation — every
+function described below is filled in, not stubbed.
+
+**What's been verified, and how**, since this sandbox can't hold a live
+database connection end-to-end (see "A known limitation" below):
+
+- `src/lib/quantity.ts` was tested against all 31 distinct "Quarterly
+  Stocking Quantity" strings that actually appear in
+  `data/master-catalog.seed.json` (parsed straight from the original
+  form), plus edge cases (`"Stock not required"`, under-target vs.
+  over-target current inventory). All pass. One real bug was caught and
+  fixed this way: an early regex (`boxes?`) only matched "boxe"/"boxes",
+  not "box" — worth knowing if you extend the pattern list later.
+- `src/lib/services/export.ts` was exercised directly with a hand-built
+  document object (no database involved), producing a real `.docx` file
+  that was converted back to text with LibreOffice to confirm the header
+  block, merged quarter columns, category grouping, and footnote marker
+  all render correctly.
+- `src/lib/services/{catalog,catalog-snapshot,documents,entries}.ts` and
+  `middleware.ts` depend on a live Prisma Client, which this sandbox
+  cannot generate (see below). They're written directly against Prisma's
+  standard query API (`findMany` / `create` / `upsert` / `$transaction`,
+  etc.) and type-check correctly everywhere except the handful of lines
+  that need the generated model types themselves.
+- Every component was written directly against the DTOs in `src/types`
+  and the hooks in `src/hooks`, and the whole project (aside from the
+  Prisma-dependent lines) passes `npx tsc --noEmit` with zero errors.
+
+## A known limitation (and why it doesn't affect you)
+
+`npx prisma generate` needs to download a query-engine binary from
+`binaries.prisma.sh`. That domain isn't reachable from the sandbox this
+project was built in, so a handful of lines in `src/lib/services/*` type-
+check against a generic fallback client instead of one that knows about
+`Lab`, `CatalogSection`, `InventoryDocument`, etc. — you'd see `tsc` errors
+like "Parameter 'tx' implicitly has an 'any' type" if you ran `tsc` here
+without a real `generate` having succeeded first. On a normal internet
+connection this resolves itself the moment you run `npx prisma migrate dev`
+(step 4 below) — nothing in the code needs to change.
+
+---
+
+## How this project is organized
+
+1. **Infrastructure/wiring.** Config files, the Prisma schema,
+   `src/lib/prisma.ts`, `src/lib/auth.ts`, `src/lib/auth-client.ts`, every
+   `app/api/**/route.ts`, `src/app/providers.tsx`, and
+   `src/store/useInventoryStore.ts`.
+
+2. **Business logic.** Every function in `src/lib/services/*`,
+   `src/lib/quantity.ts`, every hook in `src/hooks/*`, and `middleware.ts`
+   — quantity parsing, the catalog-snapshot deep copy, the docx layout,
+   session gating.
+
+3. **Frontend.** Every file in `src/components/*` and every `page.tsx` —
+   Tailwind-styled React, reading data through the hooks in bucket 2 and
+   writing through `useUpdateEntry`.
+
+---
+
+## Data model
+
+Two families of tables (see `prisma/schema.prisma` for the authoritative
+version):
+
+- **Master catalog** (`Lab`, `CatalogSection`, `CatalogItem`) — the
+  "living" chemical list. Mutable. `CatalogSection` is a self-referencing
+  tree (`parentId`) so it can represent nested categories if a future
+  revision of the paper form needs them, even though the *current* form's
+  categories are all one flat level under each lab (confirmed by parsing
+  the original table — see "Master catalog seed data" below).
+
+- **Inventory documents** (`InventoryDocument`, `DocSection`, `DocItem`,
+  `QuarterEntry`) — one `InventoryDocument` per year. When a document is
+  created, the current master catalog is **deep-copied** into that
+  document's own `DocSection`/`DocItem` rows (`snapshotCatalogIntoDocument`
+  in `src/lib/services/catalog-snapshot.ts`, wrapped in a single
+  `$transaction` so a failure partway through never leaves a half-copied
+  document behind). This is deliberate: editing the master catalog later
+  (renaming a chemical, adding a new one) never silently changes a year
+  that's already been saved. `QuarterEntry` holds the only two numbers a
+  user actually fills in per chemical per quarter — `currentInventory` and
+  `forPurchase` — one row per `(docItemId, quarter)`.
+
+Why split "master catalog" from "document snapshot" instead of one table?
+Because the chemical list itself barely changes year to year, but each
+year's counts obviously do. Keeping them separate means adding a new
+chemical to the catalog doesn't require touching every past year, and a
+past year's export always reflects exactly what existed when it was
+created.
+
+`getDocumentById` and `getMasterCatalogTree` both assemble their tree with
+a couple of flat queries plus in-memory reassembly, rather than one deeply
+nested Prisma `include` — that sidesteps Prisma's need for a hardcoded max
+depth on a self-relation, and works the same way regardless of how deep a
+future revision's categories get.
+
+---
+
+## Feature → file map
+
+| Spec requirement | Where it lives |
+|---|---|
+| Filter by quarter | `QuarterVisibilityToggle.tsx` + `useInventoryStore` |
+| Search / "only show selected chemicals" | `ChemicalSearchBox.tsx` + `useInventoryStore` (`searchTerm`, `pinnedItemIds`) |
+| Whole-document / print view | `documents/[documentId]/print/page.tsx` → `PrintableInventory.tsx` |
+| Save & continue later | Every edit is a `PATCH` to `/api/documents/:id/entries` on cell blur (see `useUpdateEntry`) — there's no separate "save" step, and re-opening a document from `DocumentList` is "continuing" |
+| Startup: new vs. continue | `StartupScreen.tsx` (composes `NewInventoryDialog.tsx` + `DocumentList.tsx`) |
+| For Purchase suggestion (not auto-written) | `src/lib/quantity.ts` (`computeForPurchaseSuggestion`), called client-side from `ForPurchaseCell.tsx`; only written to the database when the user clicks "Apply" or types a value themselves |
+| Export to the original .docx layout | `src/lib/services/export.ts` (`generateInventoryDocx`) — built programmatically with the `docx` library, see below |
+| Single username + password login | `src/lib/auth.ts` (Better Auth, email+password only) + `middleware.ts` protecting every route except `/login` |
+
+---
+
+## Master catalog seed data
+
+`data/master-catalog.seed.json` was generated by **programmatically parsing
+the original document's table** (converted from `.doc` to `.docx`, then
+read with `python-docx`), not hand-typed — this avoids transcription
+errors across the 90 chemicals in both labs. The parsing rule was simple
+and confirmed against the source: a row with a blank "Quarterly Stocking
+Quantity" cell is a category header; a row with that cell filled in is a
+chemical.
+
+**Before relying on this for real use**, read it against the original form
+once — a few rows in the "SPE Tubes" section contain "OR" alternative-brand
+lines that parsed as separate line items rather than true alternatives,
+since the source table doesn't distinguish them structurally either. That's
+a fair reflection of the original document's own formatting, not a parsing
+bug, but worth knowing about.
+
+`scripts/seed.ts` loads this JSON into the database — see Setup, step 5.
+
+---
+
+## Exporting to Word
+
+`generateInventoryDocx` builds the `.docx` file entirely in code with the
+`docx` library, rather than filling placeholder tags into a hand-authored
+Word template — that keeps the export fully generated from source (no
+separate binary file to keep in sync with the schema) while still
+reproducing the original's column layout: a merged two-row header (Quarter
+1–4 spanning Current Inventory / For Purchase sub-columns), a repeating
+table header (`tableHeader: true` on the header rows, so it reprints on
+every page the way the original form's "PARTICULARS / QUARTER" row does),
+shaded category rows, and a footnote line for asterisked chemicals.
+
+`buildDocxDocument` (the part that actually lays out the file) is exported
+separately from `generateInventoryDocx` (the part that fetches a document
+and hands it to the builder) specifically so the layout logic can be
+tested with a plain in-memory object — that's how it was verified in this
+sandbox without a database.
+
+---
+
+## Tech stack (and why)
+
+- **Next.js (App Router) + TypeScript** — one deployable codebase for both
+  UI and API, appropriate for a single internal tool rather than running
+  separate frontend/backend services.
+- **SQLite via Prisma** — a single file on disk, zero extra services to
+  install or manage. Fine for a handful of concurrent editors. If you
+  outgrow it, switching to PostgreSQL is a one-line change to
+  `datasource.provider` in `prisma/schema.prisma` plus a new
+  `DATABASE_URL` — the rest of the app doesn't change.
+- **Better Auth** — free, MIT-licensed, self-hosted, no per-user fees or
+  usage caps. Configured for plain email+password only, so the login
+  screen is exactly "username, password, sign in."
+- **TanStack Query + Zustand** — server data (documents, entries) lives in
+  Query's cache; pure view state (quarter filter, search term, pinned
+  items) lives in a small Zustand store, which is why
+  `useInventoryStore` never touches saved inventory numbers.
+- **`docx`** — MIT-licensed, generates the export entirely in code (see
+  above).
+- **No Docker.** The app runs as a native Node process (via `systemd` or
+  PM2), SQLite is just a file, and a reverse proxy (Caddy or nginx) handles
+  HTTPS.
+
+---
+
+## Setup
+
+### 1. Prerequisites
+
+- Node.js 20 or newer (this was built and type-checked against Node 22).
+- `npm`.
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
+- Leave `DATABASE_URL` as the default SQLite file unless you've switched to
+  PostgreSQL.
+- Replace `BETTER_AUTH_SECRET` with a real random value:
+  `openssl rand -base64 32`.
+- Leave `BETTER_AUTH_URL` / `NEXT_PUBLIC_BETTER_AUTH_URL` as
+  `http://localhost:3000` for local development; update both to your real
+  domain when you deploy.
+
+### 4. Create the database
+
+```bash
+npx prisma migrate dev --name init
+```
+
+This reads `prisma/schema.prisma`, downloads Prisma's query engine (needs
+a normal internet connection — see "A known limitation" above), and
+creates `dev.db` with every table already defined.
+
+### 5. Seed the master catalog
+
+```bash
+npm run db:seed
+```
+
+This loads `data/master-catalog.seed.json` into the `Lab` / `CatalogSection`
+/ `CatalogItem` tables — 2 labs, ~14 sections, 90 chemicals.
+
+### 6. Create a login
+
+Better Auth's sign-up endpoint (`/api/auth/sign-up/email`) can be called
+once to create the first user account, e.g.:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/sign-up/email \
+  -H "Content-Type: application/json" \
+  -d '{"email":"labstaff","password":"choose-a-real-password","name":"Lab Staff"}'
+```
+
+(Run this after step 7, once the dev server is up.) Once you have at least
+one account, sign in at `/login`.
+
+### 7. Run it
+
+```bash
+npm run dev
+```
+
+Visit `http://localhost:3000` — you should land on `/login`
+(via `middleware.ts`), then the startup screen after signing in.
+
+### 8. Deploying (no Docker)
+
+- Run `npm run build` then `npm run start` (or point a process manager —
+  `systemd` or `pm2` — at `npm run start` so it restarts automatically on
+  crash or reboot).
+- Put a reverse proxy (Caddy is the simplest option for automatic, free,
+  auto-renewing HTTPS via Let's Encrypt) in front of it, pointed at
+  whatever domain or subdomain you're using.
+- SQLite's `dev.db` file is your whole database — back it up by copying
+  the file (e.g. a scheduled `cp` to another disk or off-box location).
+
+---
+
+## What's deliberately out of scope for this first pass
+
+- Role-based permissions (viewer vs. editor vs. an "authorize/sign-off"
+  step) — the `status: "draft" | "final"` field on `InventoryDocument`
+  leaves room for this later without a schema change.
+- A "manage master catalog" admin screen for adding/editing chemicals
+  outside of re-running the seed script — `getMasterCatalogTree` in
+  `src/lib/services/catalog.ts` is the read side of that; a write side
+  (`upsertCatalogItem` or similar) can be added the same way when needed.
+- Offline resilience (caching in-flight edits in IndexedDB in case of a
+  dropped connection) — every edit currently assumes a live connection to
+  save.
+- `@tanstack/react-table` is listed as a dependency but the actual grid
+  (`InventoryTable.tsx`) is a plain recursive `<table>` driven by the
+  Zustand store instead — simpler to read for this project's scope, and
+  the filtering/visibility behavior it gives up nothing that the store
+  wasn't already doing. Worth swapping in if the grid grows more complex
+  (column reordering, virtualized rows for a much longer catalog, etc.).

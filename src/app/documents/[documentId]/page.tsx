@@ -1,0 +1,51 @@
+import Link from "next/link";
+import { InventoryTable } from "@/components/InventoryTable";
+import { QuarterVisibilityToggle } from "@/components/QuarterVisibilityToggle";
+import { ChemicalSearchBox } from "@/components/ChemicalSearchBox";
+import { SaveStatusBadge } from "@/components/SaveStatusBadge";
+
+// PURE FRONTEND (server component): The main editable-inventory page for
+// one document/year. Composes the filter controls
+// (QuarterVisibilityToggle, ChemicalSearchBox), a SaveStatusBadge, a link
+// to the print view, a link that hits /api/documents/:id/export to
+// download the .docx, and the InventoryTable itself.
+
+export default function DocumentPage({
+  params,
+}: {
+  params: { documentId: string };
+}) {
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-8">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-sm text-slate-500 hover:underline">
+            &larr; Back
+          </Link>
+          <SaveStatusBadge />
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/documents/${params.documentId}/print`}
+            className="text-sm text-slate-600 hover:underline"
+          >
+            Print view
+          </Link>
+          <a
+            href={`/api/documents/${params.documentId}/export`}
+            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            Export to Word
+          </a>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-4">
+        <QuarterVisibilityToggle />
+        <ChemicalSearchBox />
+      </div>
+
+      <InventoryTable documentId={params.documentId} />
+    </div>
+  );
+}

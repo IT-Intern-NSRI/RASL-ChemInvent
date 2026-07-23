@@ -1,0 +1,841 @@
+{
+  "labs": [
+    {
+      "name": "Water Quality Laboratory",
+      "sortOrder": 0,
+      "sections": [
+        {
+          "label": "I. Oxidizing Agents",
+          "level": 0,
+          "sortOrder": 0,
+          "items": [
+            {
+              "name": "Ammonium Persulfate",
+              "brand": "Merck",
+              "catalogNo": null,
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Chromium Trioxide",
+              "brand": "Merck",
+              "catalogNo": "1.00229.0250",
+              "quantityRaw": "1 x 250g",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Potassium Nitrate",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Potassium Permanganate",
+              "brand": "J. T. Baker",
+              "catalogNo": "3227.01",
+              "quantityRaw": "3 x 500g",
+              "footnote": false,
+              "sortOrder": 3
+            },
+            {
+              "name": "Potassium Persulfate",
+              "brand": "Merck",
+              "catalogNo": "1.05091.1000",
+              "quantityRaw": "1 x 1kg",
+              "footnote": false,
+              "sortOrder": 4
+            },
+            {
+              "name": "Sodium Nitrate",
+              "brand": "Merck",
+              "catalogNo": "1.06537.0500",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 5
+            },
+            {
+              "name": "Sodium Nitrite",
+              "brand": "Merck",
+              "catalogNo": "1.06549.0100",
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 6
+            },
+            {
+              "name": "30 % Hydrogen Peroxide",
+              "brand": "Merck",
+              "catalogNo": "1.07209.1000",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 7
+            }
+          ]
+        },
+        {
+          "label": "II. Reducing Agents",
+          "level": 0,
+          "sortOrder": 1,
+          "items": [
+            {
+              "name": "Potassium Iodide",
+              "brand": "Merck",
+              "catalogNo": "1.05043.0250",
+              "quantityRaw": "1 x 250g",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Sodium Borohydride",
+              "brand": "Sigma-Aldrich",
+              "catalogNo": "45,288-2",
+              "quantityRaw": "3 x 100g",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "CDTA (1,2 cyclohexylene diaminetetraaceticacid)",
+              "brand": "Merck",
+              "catalogNo": "8.41032.0025",
+              "quantityRaw": "1 x 25g",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Stannous Chloride",
+              "brand": "J. T. Baker",
+              "catalogNo": "3980.01",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 3
+            }
+          ]
+        },
+        {
+          "label": "III. Acids I - Toxic",
+          "level": 0,
+          "sortOrder": 2,
+          "items": [
+            {
+              "name": "Nitric Acid",
+              "brand": "Merck",
+              "catalogNo": "1.00456.2500",
+              "quantityRaw": "3 x 2.5L",
+              "footnote": false,
+              "sortOrder": 0
+            }
+          ]
+        },
+        {
+          "label": "Acids II -Toxic",
+          "level": 0,
+          "sortOrder": 3,
+          "items": [
+            {
+              "name": "Sulfuric Acid",
+              "brand": "Merck",
+              "catalogNo": "1.00731.2500",
+              "quantityRaw": "3 x 2.5L",
+              "footnote": false,
+              "sortOrder": 0
+            }
+          ]
+        },
+        {
+          "label": "Acids III - Other Acids",
+          "level": 0,
+          "sortOrder": 4,
+          "items": [
+            {
+              "name": "Hydrochloric Acid",
+              "brand": "Merck",
+              "catalogNo": "1.00317.2500",
+              "quantityRaw": "3 x 2.5L",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Perchloric Acid",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "1 x 1L",
+              "footnote": true,
+              "sortOrder": 1
+            }
+          ]
+        },
+        {
+          "label": "IV. Bases",
+          "level": 0,
+          "sortOrder": 5,
+          "items": [
+            {
+              "name": "Potassium Hydroxide",
+              "brand": "Fisher / RDH",
+              "catalogNo": null,
+              "quantityRaw": "Stock not required",
+              "footnote": true,
+              "sortOrder": 0
+            },
+            {
+              "name": "Sodium Hydroxide",
+              "brand": "J. T. Baker",
+              "catalogNo": "3722-05",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 1
+            }
+          ]
+        },
+        {
+          "label": "V. Inorganic Salts",
+          "level": 0,
+          "sortOrder": 6,
+          "items": [
+            {
+              "name": "Ammonium Chloride",
+              "brand": "Merck",
+              "catalogNo": "1.01145.0500",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Ammonium Molybdate",
+              "brand": "Merck",
+              "catalogNo": "1.01182.0250",
+              "quantityRaw": "1 x 250g",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Antimony potassium tartrate",
+              "brand": "J. T. Baker",
+              "catalogNo": "0864-01",
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Calcium Carbonate",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "Stock not required",
+              "footnote": true,
+              "sortOrder": 3
+            },
+            {
+              "name": "Kaolin Powder",
+              "brand": "Merck",
+              "catalogNo": null,
+              "quantityRaw": "Stock not required",
+              "footnote": false,
+              "sortOrder": 4
+            },
+            {
+              "name": "Lanthanum Oxide",
+              "brand": "Merck / J.T. Baker",
+              "catalogNo": "1.12220.0100 / P351-05",
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 5
+            },
+            {
+              "name": "Potassium Chloride",
+              "brand": "Merck",
+              "catalogNo": "1.04936.0250",
+              "quantityRaw": "1 x 250g",
+              "footnote": false,
+              "sortOrder": 6
+            },
+            {
+              "name": "Potassium Chloride saturated with Silver Chloride, 4M (Electrode Filling Solution)",
+              "brand": "Beckman",
+              "catalogNo": "P/N: 8282",
+              "quantityRaw": "1 x 100 mL",
+              "footnote": false,
+              "sortOrder": 7
+            },
+            {
+              "name": "Potassium Dihydrogen Phosphate",
+              "brand": "Merck",
+              "catalogNo": "1.04873.0250",
+              "quantityRaw": "1 x 250g",
+              "footnote": false,
+              "sortOrder": 8
+            },
+            {
+              "name": "Potassium Sulfate",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "1 x 500g",
+              "footnote": true,
+              "sortOrder": 9
+            },
+            {
+              "name": "Sodium Bicarbonate",
+              "brand": "Merck / Fluka",
+              "catalogNo": "1.06329.0500 / 71630",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 10
+            },
+            {
+              "name": "Sodium Bisulfite",
+              "brand": "J. T. Baker",
+              "catalogNo": "3556-01",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 11
+            },
+            {
+              "name": "Sodium Carbonate",
+              "brand": "Merck / RDH",
+              "catalogNo": "0089357",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 12
+            },
+            {
+              "name": "Sodium Chloride",
+              "brand": "Merck / J. T. Baker",
+              "catalogNo": "1.06404.1000 / 3624-69",
+              "quantityRaw": "1 x 1kg",
+              "footnote": false,
+              "sortOrder": 13
+            },
+            {
+              "name": "Sodium Sulfate",
+              "brand": "Merck",
+              "catalogNo": "1.06649.1000",
+              "quantityRaw": "1 x 1kg",
+              "footnote": true,
+              "sortOrder": 14
+            },
+            {
+              "name": "Silica Gel as dessicant",
+              "brand": "Merck",
+              "catalogNo": "1.01925.1000",
+              "quantityRaw": "1 x 1kg",
+              "footnote": false,
+              "sortOrder": 15
+            }
+          ]
+        },
+        {
+          "label": "Salts II - Hazardous",
+          "level": 0,
+          "sortOrder": 7,
+          "items": [
+            {
+              "name": "Hydroxylamine Hydrochloride",
+              "brand": "Merck",
+              "catalogNo": "1.04616.0250",
+              "quantityRaw": "3 x 250g",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Magnesium Oxide",
+              "brand": "J. T. Baker",
+              "catalogNo": null,
+              "quantityRaw": "Stock not required",
+              "footnote": false,
+              "sortOrder": 1
+            }
+          ]
+        },
+        {
+          "label": "VI. Organics I - Non-toxic",
+          "level": 0,
+          "sortOrder": 8,
+          "items": [
+            {
+              "name": "Ammonium Acetate",
+              "brand": "Merck",
+              "catalogNo": "1.01116.0500",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Ascorbic Acid",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Curcumin Note: food coloring",
+              "brand": "Merck / Fluka",
+              "catalogNo": "28260",
+              "quantityRaw": "1 x 10g",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Ethylenediamine tetraacetic acid",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 3
+            },
+            {
+              "name": "Sodium Acetate Trihydrate",
+              "brand": "Merck",
+              "catalogNo": "1.06267.0500",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 4
+            },
+            {
+              "name": "Sulfanilamide",
+              "brand": "Merck",
+              "catalogNo": "1.11799.0100",
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 5
+            }
+          ]
+        },
+        {
+          "label": "Organics II - With associated hazards",
+          "level": 0,
+          "sortOrder": 9,
+          "items": [
+            {
+              "name": "Methyl orange",
+              "brand": "Merck",
+              "catalogNo": null,
+              "quantityRaw": "1 x 25g",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "N-(1-naphthyl) Ethylenediamine dihydrochloride",
+              "brand": "Merck / J. T. Baker",
+              "catalogNo": "1.06237.0005",
+              "quantityRaw": "1 x 5g",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Oxalic acid",
+              "brand": "Unilab/Univar",
+              "catalogNo": "350-500G",
+              "quantityRaw": "1 x 100g",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Phenolphthalein",
+              "brand": "Mallinkrodt / RDH",
+              "catalogNo": "66005 / 055313",
+              "quantityRaw": "1 x 25g",
+              "footnote": false,
+              "sortOrder": 3
+            },
+            {
+              "name": "Potassium Hydrogen Phthalate",
+              "brand": "Merck",
+              "catalogNo": "1.04874.0250",
+              "quantityRaw": "1 x 250g",
+              "footnote": false,
+              "sortOrder": 4
+            }
+          ]
+        },
+        {
+          "label": "Organics III - Liquid",
+          "level": 0,
+          "sortOrder": 10,
+          "items": [
+            {
+              "name": "Acetic Acid",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "Stock not required",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Ethanol",
+              "brand": "Merck",
+              "catalogNo": "1.00983.2500",
+              "quantityRaw": "2 x 2.5L",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Tributyl Phosphate",
+              "brand": "Fluka",
+              "catalogNo": "90820",
+              "quantityRaw": "1 x 100mL",
+              "footnote": false,
+              "sortOrder": 2
+            }
+          ]
+        },
+        {
+          "label": "Other Supplies",
+          "level": 0,
+          "sortOrder": 11,
+          "items": [
+            {
+              "name": "pH Buffer 4",
+              "brand": "Merck",
+              "catalogNo": "1.09435.1000",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "pH Buffer 6",
+              "brand": "Merck",
+              "catalogNo": "1.09437.1000",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "pH buffer 7",
+              "brand": "Merck",
+              "catalogNo": "1.09439.100",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "pH Buffer 8",
+              "brand": "Merck",
+              "catalogNo": "1.09460.1000",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 3
+            },
+            {
+              "name": "pH Buffer 10",
+              "brand": "Merck",
+              "catalogNo": "1.09438.1000",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 4
+            },
+            {
+              "name": "pH paper 0-6",
+              "brand": "Merck",
+              "catalogNo": "1.09531.0001",
+              "quantityRaw": "1 pack",
+              "footnote": false,
+              "sortOrder": 5
+            },
+            {
+              "name": "pH paper 0-14",
+              "brand": "Merck",
+              "catalogNo": "1.09535.0001",
+              "quantityRaw": "2 packs",
+              "footnote": false,
+              "sortOrder": 6
+            },
+            {
+              "name": "Disposable Syringe for IC",
+              "brand": "Universal",
+              "catalogNo": null,
+              "quantityRaw": "2 Boxes",
+              "footnote": false,
+              "sortOrder": 7
+            },
+            {
+              "name": "Glass microfiber filter, 47 mm",
+              "brand": "Whatman",
+              "catalogNo": "1822047",
+              "quantityRaw": "2 Boxes",
+              "footnote": false,
+              "sortOrder": 8
+            },
+            {
+              "name": "Whatman Filter Paper No. 2 (125 mm diameter)",
+              "brand": "Whatman",
+              "catalogNo": "1002 125",
+              "quantityRaw": "2 Boxes",
+              "footnote": false,
+              "sortOrder": 9
+            },
+            {
+              "name": "Whatman Filter Paper No. 41 & 42 (125 mm diameter)",
+              "brand": "Whatman",
+              "catalogNo": "1441 125 / 1442 125",
+              "quantityRaw": "2 Boxes each",
+              "footnote": false,
+              "sortOrder": 10
+            },
+            {
+              "name": "Millipore HAWP 45\u00b5, 47mm/25 mm",
+              "brand": "Millipore",
+              "catalogNo": "0047",
+              "quantityRaw": "1 pack",
+              "footnote": false,
+              "sortOrder": 11
+            },
+            {
+              "name": "Millipore MCE Membrane filter 0.45\u00b5m, 25 mm",
+              "brand": "Millipore OR Whatman",
+              "catalogNo": "HAWP 02500 10.401.606",
+              "quantityRaw": "1 pack",
+              "footnote": false,
+              "sortOrder": 12
+            },
+            {
+              "name": "Parafilm M",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "1 box",
+              "footnote": false,
+              "sortOrder": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pesticide Laboratory",
+      "sortOrder": 1,
+      "sections": [
+        {
+          "label": "I. Flammables, Reducing agents (Organic compounds)",
+          "level": 0,
+          "sortOrder": 0,
+          "items": [
+            {
+              "name": "Acetone",
+              "brand": "Merck",
+              "catalogNo": "1.00014.2500",
+              "quantityRaw": "2 x 2.5L",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Acetonitrile",
+              "brand": "J. T. Baker",
+              "catalogNo": "9011-03",
+              "quantityRaw": "1 x 4L",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Cyclohexane",
+              "brand": "Merck /J. T.Baker",
+              "catalogNo": "9206-33",
+              "quantityRaw": "2 x 4L",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Dimethyl Formamide",
+              "brand": "Labscan",
+              "catalogNo": "AR1051-G",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 3
+            },
+            {
+              "name": "Ethyl Acetate",
+              "brand": "Merck",
+              "catalogNo": "1.09623.2500",
+              "quantityRaw": "1 x 2.5L",
+              "footnote": false,
+              "sortOrder": 4
+            },
+            {
+              "name": "Hexane",
+              "brand": "J. T. Baker",
+              "catalogNo": "930903",
+              "quantityRaw": "4 x 4L",
+              "footnote": false,
+              "sortOrder": 5
+            },
+            {
+              "name": "Isooctane",
+              "brand": "Merck",
+              "catalogNo": "1.04227.1000",
+              "quantityRaw": "1 x 1L",
+              "footnote": false,
+              "sortOrder": 6
+            },
+            {
+              "name": "Methanol",
+              "brand": "J.T. Baker",
+              "catalogNo": "9070-68",
+              "quantityRaw": "1 x 2.5L",
+              "footnote": false,
+              "sortOrder": 7
+            },
+            {
+              "name": "Methylene Dichloride",
+              "brand": "J.T. Baker",
+              "catalogNo": "9324-68",
+              "quantityRaw": "4 x 4L",
+              "footnote": false,
+              "sortOrder": 8
+            },
+            {
+              "name": "Toluene",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "Stock not required",
+              "footnote": true,
+              "sortOrder": 9
+            },
+            {
+              "name": "Ethanol",
+              "brand": null,
+              "catalogNo": null,
+              "quantityRaw": "1 x 2.5L",
+              "footnote": true,
+              "sortOrder": 10
+            }
+          ]
+        },
+        {
+          "label": "II. Inorganic Chemicals",
+          "level": 0,
+          "sortOrder": 1,
+          "items": [
+            {
+              "name": "Aluminum oxide",
+              "brand": "J.T. Baker",
+              "catalogNo": "0536-01",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Copper granular (20-30 mesh)",
+              "brand": "J.T. Baker",
+              "catalogNo": "1720-01",
+              "quantityRaw": "1 x 500g",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Florisil",
+              "brand": "J.T. Baker",
+              "catalogNo": "M368-07",
+              "quantityRaw": "2 x 500g",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Silica gel 60 (for column chrom)",
+              "brand": "Merck",
+              "catalogNo": "1.07734.1000",
+              "quantityRaw": "1 x 1 kg",
+              "footnote": false,
+              "sortOrder": 3
+            },
+            {
+              "name": "Sodium Chloride",
+              "brand": "Merck / J. T. Baker",
+              "catalogNo": "1.06404.1000 / 3624-69",
+              "quantityRaw": "6 x 1kg",
+              "footnote": false,
+              "sortOrder": 4
+            },
+            {
+              "name": "Sodium Sulfate",
+              "brand": "Merck",
+              "catalogNo": "1.06649.1000",
+              "quantityRaw": "6 x 1kg",
+              "footnote": false,
+              "sortOrder": 5
+            }
+          ]
+        },
+        {
+          "label": "SPE Tubes",
+          "level": 0,
+          "sortOrder": 2,
+          "items": [
+            {
+              "name": "Supelclean LC-18 SPE Tubes, 6 mL (1 gram)",
+              "brand": "Supelco",
+              "catalogNo": "505471",
+              "quantityRaw": "1 x 30 pcs",
+              "footnote": false,
+              "sortOrder": 0
+            },
+            {
+              "name": "Strata Florisil SPE FL-PR, (170 \u00b5m, 80A) 1000 mg/6mL OR",
+              "brand": "Phenomenex",
+              "catalogNo": "8B-S013-JCH",
+              "quantityRaw": "1 x 30 pcs",
+              "footnote": false,
+              "sortOrder": 1
+            },
+            {
+              "name": "Supelclean LC-Florisil SPE Tubes, 6 mL (1 gram)",
+              "brand": "Supelco",
+              "catalogNo": "57057",
+              "quantityRaw": "1 x 30 pcs",
+              "footnote": false,
+              "sortOrder": 2
+            },
+            {
+              "name": "Discovery DSC-NH2, 6 mL (1 gram)",
+              "brand": "Supelco",
+              "catalogNo": "52640-U",
+              "quantityRaw": "1 x 30 pcs",
+              "footnote": false,
+              "sortOrder": 3
+            },
+            {
+              "name": "Strata Si-1 Silica (55 \u00b5m, 70A) 100 mg/1mL OR",
+              "brand": "Phenomenex",
+              "catalogNo": "8B-S012-EAK",
+              "quantityRaw": "1 x 30 pcs",
+              "footnote": false,
+              "sortOrder": 4
+            },
+            {
+              "name": "Supelclean LC-Si SPE Tubes, 1 mL (100 mg)",
+              "brand": "Supelco",
+              "catalogNo": "504041",
+              "quantityRaw": "2 x 108 pcs.",
+              "footnote": false,
+              "sortOrder": 5
+            },
+            {
+              "name": "Supelclean LC-Si SPE Tubes, 6 mL (1 gram)",
+              "brand": "Supelco",
+              "catalogNo": "57051",
+              "quantityRaw": "1 x 30 pcs",
+              "footnote": false,
+              "sortOrder": 6
+            },
+            {
+              "name": "Supelclean LC-Si SPE Tubes, 3 mL (500 mg)",
+              "brand": "Supelco",
+              "catalogNo": "505048",
+              "quantityRaw": "2 x 54 pcs",
+              "footnote": false,
+              "sortOrder": 7
+            },
+            {
+              "name": "Supelclean ENVI Chrom P SPE Tubes, 6 mL (0.25 gram)",
+              "brand": "Supelco",
+              "catalogNo": "57225-U",
+              "quantityRaw": "1 x 30 pcs",
+              "footnote": false,
+              "sortOrder": 8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+// Prisma schema for the Digital Chemical Inventory.
+//
+// This file is fully specified on purpose - a database schema is a
+// declaration, not an algorithm, so there is nothing here left as a
+// "TODO: implement". Everything in src/lib/services/* is written against
+// this exact shape.
+//
+// Two families of models:
+//  1. Auth tables (User, Session, Account, Verification) - the shape
+//     expected by Better Auth's Prisma adapter for plain email+password
+//     login. If you install a newer/older better-auth version, run
+//     `npx @better-auth/cli generate` and diff its suggestion against this
+//     file before trusting either one blindly - the exact field list has
+//     changed between major versions.
+//  2. Domain tables - a mutable "master catalog" (Lab / CatalogSection /
+//     CatalogItem), and an immutable per-year "document" that snapshots the
+//     catalog at creation time (InventoryDocument / DocSection / DocItem /
+//     QuarterEntry). See README.md ("Data model") for the reasoning.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------------------
+// Auth tables
+// ---------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions         Session[]
+  accounts         Account[]
+  createdDocuments InventoryDocument[] @relation("DocumentCreatedBy")
+  quarterEdits     QuarterEntry[]      @relation("QuarterEntryUpdatedBy")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  password              String?
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------
+// Domain: master catalog (mutable - the "living" chemical list)
+// ---------------------------------------------------------------------
+
+model Lab {
+  id              String           @id @default(cuid())
+  name            String           @unique // "Water Quality Laboratory", "Pesticide Laboratory"
+  sortOrder       Int              @default(0)
+  catalogSections CatalogSection[]
+}
+
+model CatalogSection {
+  id       String @id @default(cuid())
+  labId    String
+  lab      Lab    @relation(fields: [labId], references: [id])
+  parentId String?
+  parent   CatalogSection?  @relation("CatalogSectionChildren", fields: [parentId], references: [id])
+  children CatalogSection[] @relation("CatalogSectionChildren")
+
+  label     String // e.g. "I. Oxidizing Agents", "Acids II -Toxic"
+  level     Int // depth in the tree; the source form is currently flat (level 0 everywhere)
+  sortOrder Int    @default(0)
+
+  items CatalogItem[]
+}
+
+model CatalogItem {
+  id        String         @id @default(cuid())
+  sectionId String
+  section   CatalogSection @relation(fields: [sectionId], references: [id])
+  sortOrder Int            @default(0)
+
+  name        String
+  brand       String?
+  catalogNo   String?
+  quantityRaw String // exact text as printed, e.g. "3 x 500g", "Stock not required"
+  footnote    Boolean @default(false) // asterisk items: "for purposes of research and method development"
+
+  docItems DocItem[]
+}
+
+// ---------------------------------------------------------------------
+// Domain: inventory documents (one per year - immutable catalog snapshot)
+// ---------------------------------------------------------------------
+
+model InventoryDocument {
+  id           String   @id @default(cuid())
+  year         Int      @unique
+  status       String   @default("draft") // "draft" | "final"
+  formNo       String   @default("RASL Form 19 Appendix 4.5.1a")
+  section      String   @default("Management Procedure")
+  issueNo      String   @default("01")
+  issueDate    String   @default("15 August 2017")
+  authorizedBy String?
+
+  createdById String
+  createdBy   User     @relation("DocumentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections DocSection[]
+}
+
+model DocSection {
+  id         String            @id @default(cuid())
+  documentId String
+  document   InventoryDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  labId    String? // set on top-level sections (one per lab); null on nested sub-sections
+  parentId String?
+  parent   DocSection?  @relation("DocSectionChildren", fields: [parentId], references: [id])
+  children DocSection[] @relation("DocSectionChildren")
+
+  label     String
+  level     Int
+  sortOrder Int    @default(0)
+
+  items DocItem[]
+}
+
+model DocItem {
+  id           String     @id @default(cuid())
+  docSectionId String
+  docSection   DocSection @relation(fields: [docSectionId], references: [id], onDelete: Cascade)
+
+  // Traceability back to the master-catalog row this was snapshotted from.
+  // Nullable because a document must survive its source catalog row being
+  // deleted later.
+  catalogItemId String?
+  catalogItem   CatalogItem? @relation(fields: [catalogItemId], references: [id])
+
+  sortOrder Int @default(0)
+
+  name        String
+  brand       String?
+  catalogNo   String?
+  quantityRaw String
+  footnote    Boolean @default(false)
+
+  quarterEntries QuarterEntry[]
+}
+
+model QuarterEntry {
+  id        String  @id @default(cuid())
+  docItemId String
+  docItem   DocItem @relation(fields: [docItemId], references: [id], onDelete: Cascade)
+
+  quarter          Int // 1, 2, 3, or 4
+  currentInventory Float?
+  forPurchase      Float?
+
+  updatedById String?
+  updatedBy   User?    @relation("QuarterEntryUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@unique([docItemId, quarter])
+}
