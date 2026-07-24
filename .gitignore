@@ -1,7 +1,5 @@
 node_modules/
 .next/
-dev.db
-dev.db-journal
 .env
 *.log
 tsconfig.tsbuildinfo

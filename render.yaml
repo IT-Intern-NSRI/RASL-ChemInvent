@@ -1,0 +1,28 @@
+# Render Blueprint - lets Render provision this service from the repo
+# directly ("New +" -> "Blueprint" in the Render dashboard, pointed at this
+# repo) instead of clicking through manual web-service setup. See
+# README.md "Deploying to Render" for the full walkthrough, including the
+# one-time database migration step this file doesn't cover (Render
+# Blueprints provision the service; they don't run `prisma migrate deploy`
+# for you).
+services:
+  - type: web
+    name: chem-inventory
+    runtime: node
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start
+    envVars:
+      # sync: false means "prompt for this in the dashboard, don't store
+      # it in the repo" - every one of these is a secret or environment-
+      # specific value.
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: NEXT_PUBLIC_BETTER_AUTH_URL
+        sync: false

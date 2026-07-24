@@ -166,11 +166,23 @@ sandbox without a database.
 - **Next.js (App Router) + TypeScript** — one deployable codebase for both
   UI and API, appropriate for a single internal tool rather than running
   separate frontend/backend services.
-- **SQLite via Prisma** — a single file on disk, zero extra services to
-  install or manage. Fine for a handful of concurrent editors. If you
-  outgrow it, switching to PostgreSQL is a one-line change to
-  `datasource.provider` in `prisma/schema.prisma` plus a new
-  `DATABASE_URL` — the rest of the app doesn't change.
+- **Neon (serverless Postgres) via Prisma** — free tier, no time limit
+  (this isn't a trial - it's a permanent free plan as long as usage stays
+  under Neon's per-project caps, which this app's dataset is nowhere close
+  to). Storage and compute are capped on the free tier (0.5 GB, 100
+  CU-hours/month) and it scales to zero when idle (a ~500ms cold start on
+  the next query after a quiet stretch) - both are non-issues for a tool a
+  few people touch a few times a quarter. Connects over standard
+  Postgres/TLS, so no extra driver package is needed beyond `@prisma/client`
+  - this app runs as a persistent Node process (see "No Docker" below), not
+  edge/serverless functions, so Neon's WebSocket-based serverless driver
+  isn't necessary here. Originally built against local SQLite for zero
+  external dependencies; swapped to Neon so the database survives
+  independently of any one server and gets automatic backups, at the cost
+  of depending on a third party's continued free tier. Switching back to
+  SQLite (or to any other Postgres host) is a one-line change to
+  `datasource.provider`/`url` in `prisma/schema.prisma` - nothing in
+  `src/lib/services/*` is Neon-specific.
 - **Better Auth** — free, MIT-licensed, self-hosted, no per-user fees or
   usage caps. Configured for plain email+password only, so the login
   screen is exactly "username, password, sign in."
@@ -180,9 +192,16 @@ sandbox without a database.
   `useInventoryStore` never touches saved inventory numbers.
 - **`docx`** — MIT-licensed, generates the export entirely in code (see
   above).
-- **No Docker.** The app runs as a native Node process (via `systemd` or
-  PM2), SQLite is just a file, and a reverse proxy (Caddy or nginx) handles
-  HTTPS.
+- **No Docker.** Hosted on Render's free web-service tier as a native Node
+  process (`npm run build` / `npm run start` - no Dockerfile needed, Render
+  detects and builds Node apps directly), with Neon as the database (see
+  above). Render's free tier never deletes an idle web service - it just
+  spins down after 15 minutes of inactivity and wakes on the next request
+  (30-60 second cold start), which is a reasonable trade for a tool that
+  goes quiet between quarters. Self-hosting on your own server instead of
+  Render is still an option and doesn't need Docker either - see "Deploying
+  to Render" below for why Render was chosen over the alternatives, and
+  the note at the end of that section for the self-hosted path.
 
 ---
 
@@ -192,6 +211,10 @@ sandbox without a database.
 
 - Node.js 20 or newer (this was built and type-checked against Node 22).
 - `npm`.
+- A free Neon account and project: [neon.tech](https://neon.tech) → create
+  a project (no credit card required). Once it's created, its dashboard's
+  "Connection Details" panel gives you two connection strings - keep that
+  tab open for the next step.
 
 ### 2. Install dependencies
 
@@ -206,23 +229,30 @@ cp .env.example .env
 ```
 
 Then edit `.env`:
-- Leave `DATABASE_URL` as the default SQLite file unless you've switched to
-  PostgreSQL.
+- Set `DATABASE_URL` to Neon's **pooled** connection string (the one with
+  `-pooler` in the hostname) - this is what the running app uses.
+- Set `DIRECT_URL` to Neon's **unpooled** connection string - only
+  `prisma migrate` (next step) uses this one; pooled connections don't
+  support the advisory locks migrations need.
+- Both should end in `?sslmode=require` - Neon requires TLS, and Prisma
+  will fail to connect without it.
 - Replace `BETTER_AUTH_SECRET` with a real random value:
   `openssl rand -base64 32`.
 - Leave `BETTER_AUTH_URL` / `NEXT_PUBLIC_BETTER_AUTH_URL` as
   `http://localhost:3000` for local development; update both to your real
   domain when you deploy.
 
-### 4. Create the database
+### 4. Create the database tables
 
 ```bash
 npx prisma migrate dev --name init
 ```
 
 This reads `prisma/schema.prisma`, downloads Prisma's query engine (needs
-a normal internet connection — see "A known limitation" above), and
-creates `dev.db` with every table already defined.
+a normal internet connection — see "A known limitation" above), connects
+to Neon over `DIRECT_URL`, and creates every table in your Neon project.
+You can confirm it worked by looking at the "Tables" view in Neon's
+dashboard.
 
 ### 5. Seed the master catalog
 
@@ -256,16 +286,61 @@ npm run dev
 Visit `http://localhost:3000` — you should land on `/login`
 (via `middleware.ts`), then the startup screen after signing in.
 
-### 8. Deploying (no Docker)
+### 8. Deploying to Render
 
-- Run `npm run build` then `npm run start` (or point a process manager —
-  `systemd` or `pm2` — at `npm run start` so it restarts automatically on
-  crash or reboot).
-- Put a reverse proxy (Caddy is the simplest option for automatic, free,
-  auto-renewing HTTPS via Let's Encrypt) in front of it, pointed at
-  whatever domain or subdomain you're using.
-- SQLite's `dev.db` file is your whole database — back it up by copying
-  the file (e.g. a scheduled `cp` to another disk or off-box location).
+Render was chosen over the more obvious alternative (Vercel, which makes
+Next.js) specifically because Vercel's free Hobby tier's terms restrict it
+to personal, non-commercial use - using it for an institute's internal
+tool would technically violate that from day one. Render's free tier has
+no such restriction, and never deletes an idle web service (it spins down
+after 15 minutes of inactivity and wakes on the next request, 30-60 second
+cold start - a fine trade for a tool used a few times a quarter).
+
+1. Push this project to a GitHub (or GitLab) repository - Render deploys
+   from a connected repo, not a local file upload.
+2. In the [Render dashboard](https://dashboard.render.com), choose
+   **New +** → **Blueprint**, and point it at your repo. Render will read
+   `render.yaml` (already in this project) and set up the web service
+   automatically: Node runtime, `npm install && npx prisma generate &&
+   npm run build` as the build command, `npm run start` as the start
+   command, all on the free plan.
+   - Don't have `render.yaml`, or prefer clicking through it manually
+     instead? Choose **New +** → **Web Service** instead, connect the
+     repo, and fill in the same build/start commands by hand.
+3. Render will prompt you for the environment variables listed in
+   `render.yaml` (`DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET`,
+   `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL`) since they're marked
+   `sync: false` - meaning "ask for these, don't store them in the repo."
+   Use the same Neon connection strings from step 3 (or a separate
+   "production" Neon project, if you'd rather keep dev and prod apart -
+   Neon's free tier allows multiple projects).
+4. There's a chicken-and-egg step with `BETTER_AUTH_URL` /
+   `NEXT_PUBLIC_BETTER_AUTH_URL`: Render only assigns your service's URL
+   (something like `https://chem-inventory-xxxx.onrender.com`) once it's
+   created. Deploy once with a placeholder value for both, copy the real
+   URL Render gives you, then update both env vars to match and let it
+   redeploy. If you're pointing a custom domain at it instead (Render's
+   free tier supports this), use that domain instead of the `.onrender.com`
+   one.
+5. Run the database migration once, from your own machine, before (or
+   right after) the first deploy - Render Blueprints provision the
+   service but don't run `prisma migrate deploy` for you:
+   ```bash
+   DIRECT_URL="<your Neon direct connection string>" npx prisma migrate deploy
+   ```
+6. Seed the master catalog the same way, once:
+   ```bash
+   DATABASE_URL="<your Neon pooled connection string>" npm run db:seed
+   ```
+7. Create the first login the same way described in step 6 above, but
+   against your Render URL instead of `localhost:3000`.
+
+**Prefer to self-host instead of using Render?** Nothing about the app
+requires Render specifically - run `npm run build` then `npm run start`
+on any server you control (a process manager like `systemd` or `pm2` will
+restart it on crash/reboot), put a reverse proxy like Caddy in front for
+free auto-renewing HTTPS, and point the same `.env` at Neon. No Docker
+either way.
 
 ---
 

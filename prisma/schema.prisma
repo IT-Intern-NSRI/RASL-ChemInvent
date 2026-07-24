@@ -18,8 +18,14 @@
 //     QuarterEntry). See README.md ("Data model") for the reasoning.
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // DATABASE_URL: Neon's pooled connection string, used by the running app.
+  url       = env("DATABASE_URL")
+  // DIRECT_URL: Neon's unpooled connection string, used only by
+  // `prisma migrate` - migrations need a direct connection because pooled
+  // (PgBouncer-style) connections don't support the advisory locks
+  // migrations rely on. See README.md "Setup" for where to get both.
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
