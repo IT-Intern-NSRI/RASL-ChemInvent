@@ -266,16 +266,42 @@ This loads `data/master-catalog.seed.json` into the `Lab` / `CatalogSection`
 ### 6. Create a login
 
 Better Auth's sign-up endpoint (`/api/auth/sign-up/email`) can be called
-once to create the first user account, e.g.:
+once to create the first user account. There's no sign-up screen in the
+app itself (by design - see "Single username + password login" above), so
+this one-time step has to be done directly against the API.
 
-```bash
-curl -X POST http://localhost:3000/api/auth/sign-up/email \
-  -H "Content-Type: application/json" \
-  -d '{"email":"labstaff","password":"choose-a-real-password","name":"Lab Staff"}'
+**Easiest way, works identically on Windows/Mac/Linux:** once the app is
+running (after step 7) and you have it open in a browser, open DevTools'
+console (F12, or right-click → Inspect → Console) and paste:
+
+```js
+fetch("/api/auth/sign-up/email", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "labstaff",
+    password: "choose-a-real-password",
+    name: "Lab Staff",
+  }),
+}).then((r) => r.json()).then(console.log)
 ```
 
-(Run this after step 7, once the dev server is up.) Once you have at least
-one account, sign in at `/login`.
+Press Enter, and you should see a response object printed with no `error`
+field. This runs as plain JavaScript in the browser, so it sidesteps the
+quoting differences between bash, Windows Command Prompt, and PowerShell
+entirely - a `curl` command that works in one of those often needs
+different quoting in another (this bit us with an earlier version of these
+instructions).
+
+**If you'd rather use `curl`:** the exact command differs by shell -
+bash/macOS/Linux uses single quotes and backslash line-continuation;
+Windows Command Prompt needs escaped double quotes on one line instead
+(single quotes and `\` aren't special to `cmd.exe`); PowerShell's `curl`
+is often aliased to `Invoke-WebRequest`, which doesn't accept the same
+flags, so use `curl.exe` explicitly there. The browser-console method
+above avoids all of this, which is why it's the recommended path.
+
+Once you have at least one account, sign in at `/login`.
 
 ### 7. Run it
 
@@ -324,13 +350,25 @@ cold start - a fine trade for a tool used a few times a quarter).
    one.
 5. Run the database migration once, from your own machine, before (or
    right after) the first deploy - Render Blueprints provision the
-   service but don't run `prisma migrate deploy` for you:
+   service but don't run `prisma migrate deploy` for you. Make sure your
+   local `.env` has `DATABASE_URL` and `DIRECT_URL` set to the same Neon
+   project you gave Render (steps 3-4 above already set these up if
+   you're deploying the same project you tested locally), then run:
    ```bash
-   DIRECT_URL="<your Neon direct connection string>" npx prisma migrate deploy
+   npx prisma migrate deploy
    ```
-6. Seed the master catalog the same way, once:
+   Prisma's CLI reads `.env` automatically, so this works the same way in
+   any shell - no need to prefix the command with the connection string
+   by hand. (If you do want to point at a different database than the one
+   in your local `.env` just for this one command, set the variable
+   first with whatever your shell uses - `set DATABASE_URL=...` in
+   Windows Command Prompt, `$env:DATABASE_URL="..."` in PowerShell,
+   `DATABASE_URL="..." npx prisma migrate deploy` in bash/zsh/macOS/Linux
+   - rather than assuming the bash syntax works everywhere.)
+6. Seed the master catalog the same way, once - `.env` already has what
+   this needs, so it's just:
    ```bash
-   DATABASE_URL="<your Neon pooled connection string>" npm run db:seed
+   npm run db:seed
    ```
 7. Create the first login the same way described in step 6 above, but
    against your Render URL instead of `localhost:3000`.
