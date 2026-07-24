@@ -18,7 +18,7 @@ const patchSchema = z.object({
 // cell blur from CurrentInventoryCell / ForPurchaseCell.
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { documentId: string } }
+  { params }: { params: Promise<{ documentId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {

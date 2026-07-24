@@ -9,13 +9,14 @@ import { getDocumentById, updateDocumentStatus } from "@/lib/services/documents"
 // full tree the editable grid renders.
 export async function GET(
   request: NextRequest,
-  { params }: { params: { documentId: string } }
+  { params }: { params: Promise<{ documentId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const document = await getDocumentById(params.documentId);
+  const { documentId } = await params;
+  const document = await getDocumentById(documentId);
   return NextResponse.json(document);
 }
 
@@ -26,13 +27,14 @@ const patchSchema = z.object({ status: z.enum(["draft", "final"]) });
 // updated document row - used by a "Mark as Final" action.
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { documentId: string } }
+  { params }: { params: Promise<{ documentId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const { documentId } = await params;
   const body = patchSchema.parse(await request.json());
-  const document = await updateDocumentStatus(params.documentId, body.status);
+  const document = await updateDocumentStatus(documentId, body.status);
   return NextResponse.json(document);
 }

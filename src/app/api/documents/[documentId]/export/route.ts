@@ -9,18 +9,19 @@ import { generateInventoryDocx } from "@/lib/services/export";
 // button's target.
 export async function GET(
   request: NextRequest,
-  { params }: { params: { documentId: string } }
+  { params }: { params: Promise<{ documentId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const buffer = await generateInventoryDocx(params.documentId);
+  const { documentId } = await params;
+  const buffer = await generateInventoryDocx(documentId);
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "Content-Disposition": `attachment; filename="inventory-${params.documentId}.docx"`,
+      "Content-Disposition": `attachment; filename="inventory-${documentId}.docx"`,
     },
   });
 }

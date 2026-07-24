@@ -10,11 +10,13 @@ import { SaveStatusBadge } from "@/components/SaveStatusBadge";
 // to the print view, a link that hits /api/documents/:id/export to
 // download the .docx, and the InventoryTable itself.
 
-export default function DocumentPage({
+export default async function DocumentPage({
   params,
 }: {
-  params: { documentId: string };
+  params: Promise<{ documentId: string }>;
 }) {
+  const { documentId } = await params;
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -26,13 +28,13 @@ export default function DocumentPage({
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href={`/documents/${params.documentId}/print`}
+            href={`/documents/${documentId}/print`}
             className="text-sm text-slate-600 hover:underline"
           >
             Print view
           </Link>
           <a
-            href={`/api/documents/${params.documentId}/export`}
+            href={`/api/documents/${documentId}/export`}
             className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
           >
             Export to Word
@@ -45,7 +47,7 @@ export default function DocumentPage({
         <ChemicalSearchBox />
       </div>
 
-      <InventoryTable documentId={params.documentId} />
+      <InventoryTable documentId={documentId} />
     </div>
   );
 }
