@@ -60,6 +60,22 @@ connection this resolves itself the moment you run `npx prisma migrate dev`
    — quantity parsing, the catalog-snapshot deep copy, the docx layout,
    session gating.
 
+   **A note on `middleware.ts` specifically:** it checks only whether a
+   session cookie is *present* (`getSessionCookie` from
+   `better-auth/cookies`), not whether it's still valid. That's
+   deliberate, not a shortcut: Next.js Middleware always runs on the Edge
+   Runtime, which cannot run Prisma's standard client (no Node.js
+   APIs/native binaries there). An earlier version of this file called
+   the database-backed `auth.api.getSession()` directly in middleware -
+   it looked correct and compiled fine, but silently never worked,
+   because Prisma can't run in that context. The symptom was exactly
+   backwards from what you'd expect: pages were reachable without being
+   logged in at all, while API routes correctly returned 401 (they run in
+   the normal Node.js runtime, where Prisma works fine). Real session
+   validation still happens in every API route via `auth.api.getSession`
+   - middleware is just a fast first gate to keep a logged-out visitor
+   from seeing a page at all.
+
 3. **Frontend.** Every file in `src/components/*` and every `page.tsx` —
    Tailwind-styled React, reading data through the hooks in bucket 2 and
    writing through `useUpdateEntry`.
