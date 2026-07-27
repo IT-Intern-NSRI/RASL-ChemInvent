@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { NewInventoryDialog } from "./NewInventoryDialog";
 import { DocumentList } from "./DocumentList";
 
@@ -41,12 +42,20 @@ export function StartupScreen() {
         </button>
       </div>
 
-      <button
-        onClick={() => setDialogOpen(true)}
-        className="mb-8 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-      >
-        Start New Inventory
-      </button>
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        >
+          Start New Inventory
+        </button>
+        <Link
+          href="/catalog"
+          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Manage Chemical Catalog
+        </Link>
+      </div>
 
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
         Continue Existing Inventory

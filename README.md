@@ -133,6 +133,7 @@ future revision's categories get.
 | For Purchase suggestion (not auto-written) | `src/lib/quantity.ts` (`computeForPurchaseSuggestion`), called client-side from `ForPurchaseCell.tsx`; only written to the database when the user clicks "Apply" or types a value themselves |
 | Export to the original .docx layout | `src/lib/services/export.ts` (`generateInventoryDocx`) — built programmatically with the `docx` library, see below |
 | Single-credential login | `src/lib/pin-session.ts` + `middleware.ts` protecting every route except `/login` and the login/logout API routes — see "Authentication" below |
+| Add / edit chemicals in the master catalog | `catalog/page.tsx` → `CatalogManager.tsx` (+ `CatalogSectionGroup.tsx`, `CatalogItemRow.tsx`, `AddCatalogItemForm.tsx`), backed by `createCatalogItem` / `updateCatalogItem` in `src/lib/services/catalog.ts` and `POST /api/catalog/items`, `PATCH /api/catalog/items/:itemId` |
 
 ---
 
@@ -402,10 +403,12 @@ either way.
 - Role-based permissions (viewer vs. editor vs. an "authorize/sign-off"
   step) — the `status: "draft" | "final"` field on `InventoryDocument`
   leaves room for this later without a schema change.
-- A "manage master catalog" admin screen for adding/editing chemicals
-  outside of re-running the seed script — `getMasterCatalogTree` in
-  `src/lib/services/catalog.ts` is the read side of that; a write side
-  (`upsertCatalogItem` or similar) can be added the same way when needed.
+- Deleting a chemical from the master catalog, or creating/renaming
+  categories (`CatalogSection`s) and labs themselves — the "manage master
+  catalog" screen (`/catalog`) currently only adds and edits chemicals
+  within *existing* sections. `createCatalogItem`/`updateCatalogItem` in
+  `src/lib/services/catalog.ts` follow the same pattern a `deleteCatalogItem`
+  or section-level CRUD could reuse when needed.
 - Offline resilience (caching in-flight edits in IndexedDB in case of a
   dropped connection) — every edit currently assumes a live connection to
   save.

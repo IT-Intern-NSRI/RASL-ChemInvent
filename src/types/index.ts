@@ -71,3 +71,22 @@ export interface UpdateQuarterEntryInput {
 export interface CreateDocumentInput {
   year: number;
 }
+
+// --- Master catalog management (add/edit chemicals) ---
+
+export interface CreateCatalogItemInput {
+  sectionId: string;
+  name: string;
+  brand?: string | null;
+  catalogNo?: string | null;
+  quantityRaw: string;
+  footnote?: boolean;
+}
+
+export interface UpdateCatalogItemInput {
+  name?: string;
+  brand?: string | null;
+  catalogNo?: string | null;
+  quantityRaw?: string;
+  footnote?: boolean;
+}

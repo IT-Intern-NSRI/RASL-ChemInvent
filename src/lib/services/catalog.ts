@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import type { DocSectionDTO, DocItemDTO, QuarterEntryDTO } from "@/types";
+import type {
+  DocSectionDTO,
+  DocItemDTO,
+  QuarterEntryDTO,
+  CreateCatalogItemInput,
+  UpdateCatalogItemInput,
+} from "@/types";
 
 // def getMasterCatalogTree(): Input is nothing. Output is the full nested
 // tree of every Lab -> CatalogSection -> (sub-sections) -> CatalogItem, in
@@ -83,4 +89,53 @@ export async function getMasterCatalogTree(): Promise<DocSectionDTO[]> {
   }
 
   return labs.map((lab) => labNodesById.get(lab.id)!);
+}
+
+// def createCatalogItem(input): Input is which CatalogSection the new
+// chemical belongs to (input.sectionId - must be an actual
+// CatalogSection id, not a Lab's synthetic root node id from the tree
+// above) plus its name/brand/catalogNo/quantityRaw/footnote. Output is
+// the newly created CatalogItem row, appended after every existing item
+// in that section (sortOrder = current max + 1). This only changes the
+// master catalog - it has no effect on any InventoryDocument that
+// already exists, since those hold their own deep-copied DocItem rows
+// (see README.md "Data model"). It only shows up the next time someone
+// starts a new year's inventory (createDocument -> snapshotCatalogIntoDocument).
+export async function createCatalogItem(input: CreateCatalogItemInput) {
+  const maxSortOrder = await prisma.catalogItem.aggregate({
+    where: { sectionId: input.sectionId },
+    _max: { sortOrder: true },
+  });
+
+  return prisma.catalogItem.create({
+    data: {
+      sectionId: input.sectionId,
+      name: input.name,
+      brand: input.brand ?? null,
+      catalogNo: input.catalogNo ?? null,
+      quantityRaw: input.quantityRaw,
+      footnote: input.footnote ?? false,
+      sortOrder: (maxSortOrder._max.sortOrder ?? 0) + 1,
+    },
+  });
+}
+
+// def updateCatalogItem(itemId, input): Input is an existing CatalogItem's
+// id and any subset of its editable fields (name, brand, catalogNo,
+// quantityRaw, footnote - each omitted field is left untouched, matching
+// the same "partial update" convention as updateQuarterEntry in
+// entries.ts). Output is the updated CatalogItem row. Same
+// snapshot-isolation note as createCatalogItem above applies: editing a
+// chemical here never rewrites a past year's saved document.
+export async function updateCatalogItem(itemId: string, input: UpdateCatalogItemInput) {
+  return prisma.catalogItem.update({
+    where: { id: itemId },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.brand !== undefined && { brand: input.brand }),
+      ...(input.catalogNo !== undefined && { catalogNo: input.catalogNo }),
+      ...(input.quantityRaw !== undefined && { quantityRaw: input.quantityRaw }),
+      ...(input.footnote !== undefined && { footnote: input.footnote }),
+    },
+  });
 }
