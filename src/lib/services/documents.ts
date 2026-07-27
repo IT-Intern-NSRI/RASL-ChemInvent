@@ -148,3 +148,17 @@ export async function updateDocumentStatus(documentId: string, status: DocumentS
     data: { status },
   });
 }
+
+// def deleteDocument(documentId): Input is a document id. Output is the
+// deleted InventoryDocument row. Side effect: permanently removes that
+// document's entire DocSection/DocItem/QuarterEntry tree along with it -
+// each of those models cascades on its parent (see the `onDelete: Cascade`
+// relations in schema.prisma), so a single delete here is enough; nothing
+// is left orphaned. This only ever removes one year's saved snapshot - it
+// has no effect on the master catalog (Lab/CatalogSection/CatalogItem) or
+// on any other document.
+export async function deleteDocument(documentId: string) {
+  return prisma.inventoryDocument.delete({
+    where: { id: documentId },
+  });
+}

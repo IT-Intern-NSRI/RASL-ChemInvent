@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAuthenticated } from "@/lib/pin-session";
-import { getDocumentById, updateDocumentStatus } from "@/lib/services/documents";
+import { getDocumentById, updateDocumentStatus, deleteDocument } from "@/lib/services/documents";
 
 // GET /api/documents/:documentId
 // Input: documentId from the URL. Output: InventoryDocumentFullDTO - the
@@ -35,4 +35,22 @@ export async function PATCH(
   const body = patchSchema.parse(await request.json());
   const document = await updateDocumentStatus(documentId, body.status);
   return NextResponse.json(document);
+}
+
+// DELETE /api/documents/:documentId
+// Input: documentId from the URL. Output: 204 with no body on success.
+// Permanently deletes that one saved inventory (and everything under it -
+// see deleteDocument) - used by the delete control on the startup
+// screen's "Continue Existing Inventory" list. Does not touch the master
+// catalog or any other document.
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ documentId: string }> }
+) {
+  if (!(await isAuthenticated(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { documentId } = await params;
+  await deleteDocument(documentId);
+  return new NextResponse(null, { status: 204 });
 }

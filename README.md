@@ -134,6 +134,7 @@ future revision's categories get.
 | Export to the original .docx layout | `src/lib/services/export.ts` (`generateInventoryDocx`) — built programmatically with the `docx` library, see below |
 | Single-credential login | `src/lib/pin-session.ts` + `middleware.ts` protecting every route except `/login` and the login/logout API routes — see "Authentication" below |
 | Add / edit chemicals in the master catalog | `catalog/page.tsx` → `CatalogManager.tsx` (+ `CatalogSectionGroup.tsx`, `CatalogItemRow.tsx`, `AddCatalogItemForm.tsx`), backed by `createCatalogItem` / `updateCatalogItem` in `src/lib/services/catalog.ts` and `POST /api/catalog/items`, `PATCH /api/catalog/items/:itemId` |
+| Delete an old inventory | `DocumentList.tsx` (inline confirm, no native `confirm()` popup), backed by `deleteDocument` in `src/lib/services/documents.ts` and `DELETE /api/documents/:documentId` — relies on the `onDelete: Cascade` relations already in `schema.prisma` to clean up that document's sections/items/quarter entries in one call |
 
 ---
 
