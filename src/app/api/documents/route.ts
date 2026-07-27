@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAuthenticated } from "@/lib/pin-session";
-import { listDocuments, createDocument } from "@/lib/services/documents";
+import { listDocuments, createDocument, DuplicateYearError } from "@/lib/services/documents";
 
 // GET /api/documents
 // Input: none (session cookie only). Output: JSON array of
@@ -30,6 +30,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = createDocumentSchema.parse(await request.json());
-  const document = await createDocument(body.year);
-  return NextResponse.json(document, { status: 201 });
+
+  try {
+    const document = await createDocument(body.year);
+    return NextResponse.json(document, { status: 201 });
+  } catch (error) {
+    if (error instanceof DuplicateYearError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    // Logged so the real cause shows up in Render's logs - without this,
+    // an unexpected failure here (e.g. a slow database connection) turns
+    // into a bare 500 with no way to tell what actually went wrong.
+    console.error("Failed to create inventory document:", error);
+    return NextResponse.json(
+      { error: "Something went wrong while creating the inventory. Please try again." },
+      { status: 500 }
+    );
+  }
 }

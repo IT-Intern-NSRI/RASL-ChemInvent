@@ -118,24 +118,35 @@ export async function getDocumentById(documentId: string): Promise<InventoryDocu
   };
 }
 
+// Thrown by createDocument when a document for that year already exists.
+// A distinct class (rather than a plain Error) so the API route can tell
+// this apart from an unexpected failure and respond with 409 instead of
+// a generic 500.
+export class DuplicateYearError extends Error {}
+
 // def createDocument(year): Input is the calendar year for the new
 // inventory (e.g. 2027). Output is the newly created InventoryDocument
-// row. Side effect: snapshots the current master catalog into
-// DocSection/DocItem/QuarterEntry rows for the new document, so later
-// catalog edits never retroactively change a past year's saved numbers.
+// row, with its DocSection/DocItem/QuarterEntry tree already populated
+// from the current master catalog. The document row and its snapshot are
+// created in one transaction, so a failure partway through the snapshot
+// (e.g. a slow connection) rolls back the document too, instead of
+// leaving an empty, sectionless document behind under that year.
 export async function createDocument(year: number) {
   const existing = await prisma.inventoryDocument.findUnique({ where: { year } });
   if (existing) {
-    throw new Error(`An inventory for ${year} already exists.`);
+    throw new DuplicateYearError(`An inventory for ${year} already exists.`);
   }
 
-  const document = await prisma.inventoryDocument.create({
-    data: { year, status: "draft" },
-  });
-
-  await snapshotCatalogIntoDocument(document.id);
-
-  return document;
+  return prisma.$transaction(
+    async (tx) => {
+      const document = await tx.inventoryDocument.create({
+        data: { year, status: "draft" },
+      });
+      await snapshotCatalogIntoDocument(document.id, tx);
+      return document;
+    },
+    { timeout: 15000 }
+  );
 }
 
 // def updateDocumentStatus(documentId, status): Input is a document id and
