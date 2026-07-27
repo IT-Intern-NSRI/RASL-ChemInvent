@@ -51,30 +51,30 @@ connection this resolves itself the moment you run `npx prisma migrate dev`
 ## How this project is organized
 
 1. **Infrastructure/wiring.** Config files, the Prisma schema,
-   `src/lib/prisma.ts`, `src/lib/auth.ts`, `src/lib/auth-client.ts`, every
-   `app/api/**/route.ts`, `src/app/providers.tsx`, and
-   `src/store/useInventoryStore.ts`.
+   `src/lib/prisma.ts`, every `app/api/**/route.ts`,
+   `src/app/providers.tsx`, and `src/store/useInventoryStore.ts`.
 
 2. **Business logic.** Every function in `src/lib/services/*`,
-   `src/lib/quantity.ts`, every hook in `src/hooks/*`, and `middleware.ts`
-   — quantity parsing, the catalog-snapshot deep copy, the docx layout,
-   session gating.
+   `src/lib/quantity.ts`, `src/lib/pin-session.ts`, every hook in
+   `src/hooks/*`, and `middleware.ts` — quantity parsing, the
+   catalog-snapshot deep copy, the docx layout, session gating.
 
-   **A note on `middleware.ts` specifically:** it checks only whether a
-   session cookie is *present* (`getSessionCookie` from
-   `better-auth/cookies`), not whether it's still valid. That's
-   deliberate, not a shortcut: Next.js Middleware always runs on the Edge
-   Runtime, which cannot run Prisma's standard client (no Node.js
-   APIs/native binaries there). An earlier version of this file called
-   the database-backed `auth.api.getSession()` directly in middleware -
-   it looked correct and compiled fine, but silently never worked,
-   because Prisma can't run in that context. The symptom was exactly
-   backwards from what you'd expect: pages were reachable without being
-   logged in at all, while API routes correctly returned 401 (they run in
-   the normal Node.js runtime, where Prisma works fine). Real session
-   validation still happens in every API route via `auth.api.getSession`
-   - middleware is just a fast first gate to keep a logged-out visitor
-   from seeing a page at all.
+   **A note on authentication specifically**, since it went through a real
+   design change during development: the app was originally built on
+   Better Auth (individual accounts, database-backed sessions), then
+   switched to a single shared PIN (see "Authentication" below for why).
+   That switch happened *because* of a genuine bug the Better Auth version
+   had: `middleware.ts` called a database-backed session check, but
+   Next.js Middleware always runs on the Edge Runtime, which cannot run
+   Prisma's standard client (no Node.js APIs/native binaries there) - so
+   that check silently never worked. Pages were reachable without logging
+   in at all, while API routes (which run in the normal Node.js runtime)
+   correctly rejected requests with 401. The current PIN system in
+   `src/lib/pin-session.ts` sidesteps that whole problem rather than
+   working around it: it's built entirely on the Web Crypto API
+   (`crypto.subtle`), which is identical in both the Edge and Node.js
+   runtimes, so `middleware.ts` now does full, real signature+expiry
+   verification with no database involved at all.
 
 3. **Frontend.** Every file in `src/components/*` and every `page.tsx` —
    Tailwind-styled React, reading data through the hooks in bucket 2 and
@@ -132,7 +132,45 @@ future revision's categories get.
 | Startup: new vs. continue | `StartupScreen.tsx` (composes `NewInventoryDialog.tsx` + `DocumentList.tsx`) |
 | For Purchase suggestion (not auto-written) | `src/lib/quantity.ts` (`computeForPurchaseSuggestion`), called client-side from `ForPurchaseCell.tsx`; only written to the database when the user clicks "Apply" or types a value themselves |
 | Export to the original .docx layout | `src/lib/services/export.ts` (`generateInventoryDocx`) — built programmatically with the `docx` library, see below |
-| Single username + password login | `src/lib/auth.ts` (Better Auth, email+password only) + `middleware.ts` protecting every route except `/login` |
+| Single-credential login | `src/lib/pin-session.ts` + `middleware.ts` protecting every route except `/login` and the login/logout API routes — see "Authentication" below |
+
+---
+
+## Authentication
+
+The app sits behind a single shared PIN rather than individual accounts —
+this was a deliberate simplification made partway through development
+(the project started with Better Auth and per-user accounts; see the note
+under "Business logic" above for why that was replaced, not just patched).
+
+How it works, all in `src/lib/pin-session.ts`:
+- The PIN's **SHA-256 hash** is hardcoded in that file (not the plaintext
+  PIN itself) - `POST /api/login` hashes whatever was typed in and compares
+  it to that constant.
+- On a match, the server issues a **signed cookie**: an expiry timestamp
+  plus an HMAC-SHA256 signature over it, keyed by `SESSION_SECRET`. No
+  session table, no database lookup on every request - `middleware.ts`
+  and every API route just recompute the signature and compare.
+- `POST /api/logout` clears the cookie. The "Sign out" link on the startup
+  screen calls it.
+
+**Trade-offs worth knowing about, since they're a direct consequence of
+"one shared PIN" instead of real accounts:**
+- There's no per-user identity anywhere in the data model anymore -
+  `QuarterEntry` and `InventoryDocument` don't record *who* made an edit,
+  only *when* (`updatedAt`/`createdAt`). If knowing which lab tech changed
+  a number ever becomes important, that needs individual accounts back,
+  which is a real (if contained) piece of work, not a config flag.
+- Anyone with the PIN has full access - there's no viewer/editor
+  distinction and no way to revoke one person's access without changing
+  the PIN for everyone.
+- To change the PIN: compute a new hash (`node -e "const {createHash} =
+  require('crypto'); console.log(createHash('sha256').update('your-new-pin').digest('hex'))"`),
+  replace the `PIN_HASH_HEX` constant in `src/lib/pin-session.ts`,
+  redeploy. Every existing session stays valid until it naturally expires
+  (30 days) since the PIN itself isn't part of the signed cookie - only
+  rotating `SESSION_SECRET` invalidates sessions immediately, forcing
+  everyone to re-enter the PIN.
 
 ---
 
@@ -199,9 +237,12 @@ sandbox without a database.
   SQLite (or to any other Postgres host) is a one-line change to
   `datasource.provider`/`url` in `prisma/schema.prisma` - nothing in
   `src/lib/services/*` is Neon-specific.
-- **Better Auth** — free, MIT-licensed, self-hosted, no per-user fees or
-  usage caps. Configured for plain email+password only, so the login
-  screen is exactly "username, password, sign in."
+- **A shared PIN, hashed and signed with the Web Crypto API** — no auth
+  library at all, on purpose: see "Authentication" above for the reasoning
+  and for how a database-backed auth check in Next.js Middleware (Edge
+  Runtime) turned into a real, hard-to-spot bug earlier in this project's
+  development. Zero dependencies, zero database tables, works identically
+  in Edge and Node.js contexts.
 - **TanStack Query + Zustand** — server data (documents, entries) lives in
   Query's cache; pure view state (quarter filter, search term, pinned
   items) lives in a small Zustand store, which is why
@@ -252,11 +293,8 @@ Then edit `.env`:
   support the advisory locks migrations need.
 - Both should end in `?sslmode=require` - Neon requires TLS, and Prisma
   will fail to connect without it.
-- Replace `BETTER_AUTH_SECRET` with a real random value:
+- Replace `SESSION_SECRET` with a real random value:
   `openssl rand -base64 32`.
-- Leave `BETTER_AUTH_URL` / `NEXT_PUBLIC_BETTER_AUTH_URL` as
-  `http://localhost:3000` for local development; update both to your real
-  domain when you deploy.
 
 ### 4. Create the database tables
 
@@ -279,56 +317,19 @@ npm run db:seed
 This loads `data/master-catalog.seed.json` into the `Lab` / `CatalogSection`
 / `CatalogItem` tables — 2 labs, ~14 sections, 90 chemicals.
 
-### 6. Create a login
-
-Better Auth's sign-up endpoint (`/api/auth/sign-up/email`) can be called
-once to create the first user account. There's no sign-up screen in the
-app itself (by design - see "Single username + password login" above), so
-this one-time step has to be done directly against the API.
-
-**Easiest way, works identically on Windows/Mac/Linux:** once the app is
-running (after step 7) and you have it open in a browser, open DevTools'
-console (F12, or right-click → Inspect → Console) and paste:
-
-```js
-fetch("/api/auth/sign-up/email", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email: "labstaff",
-    password: "choose-a-real-password",
-    name: "Lab Staff",
-  }),
-}).then((r) => r.json()).then(console.log)
-```
-
-Press Enter, and you should see a response object printed with no `error`
-field. This runs as plain JavaScript in the browser, so it sidesteps the
-quoting differences between bash, Windows Command Prompt, and PowerShell
-entirely - a `curl` command that works in one of those often needs
-different quoting in another (this bit us with an earlier version of these
-instructions).
-
-**If you'd rather use `curl`:** the exact command differs by shell -
-bash/macOS/Linux uses single quotes and backslash line-continuation;
-Windows Command Prompt needs escaped double quotes on one line instead
-(single quotes and `\` aren't special to `cmd.exe`); PowerShell's `curl`
-is often aliased to `Invoke-WebRequest`, which doesn't accept the same
-flags, so use `curl.exe` explicitly there. The browser-console method
-above avoids all of this, which is why it's the recommended path.
-
-Once you have at least one account, sign in at `/login`.
-
-### 7. Run it
+### 6. Run it
 
 ```bash
 npm run dev
 ```
 
-Visit `http://localhost:3000` — you should land on `/login`
-(via `middleware.ts`), then the startup screen after signing in.
+Visit `http://localhost:3000` — you should land on `/login` (via
+`middleware.ts`). Enter the PIN (see "Authentication" above for where
+that's defined) to reach the startup screen. There's no account to create
+first - unlike the Better Auth version this project started with, the PIN
+itself *is* the credential.
 
-### 8. Deploying to Render
+### 7. Deploying to Render
 
 Render was chosen over the more obvious alternative (Vercel, which makes
 Next.js) specifically because Vercel's free Hobby tier's terms restrict it
@@ -350,21 +351,19 @@ cold start - a fine trade for a tool used a few times a quarter).
      instead? Choose **New +** → **Web Service** instead, connect the
      repo, and fill in the same build/start commands by hand.
 3. Render will prompt you for the environment variables listed in
-   `render.yaml` (`DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET`,
-   `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL`) since they're marked
-   `sync: false` - meaning "ask for these, don't store them in the repo."
-   Use the same Neon connection strings from step 3 (or a separate
-   "production" Neon project, if you'd rather keep dev and prod apart -
-   Neon's free tier allows multiple projects).
-4. There's a chicken-and-egg step with `BETTER_AUTH_URL` /
-   `NEXT_PUBLIC_BETTER_AUTH_URL`: Render only assigns your service's URL
-   (something like `https://chem-inventory-xxxx.onrender.com`) once it's
-   created. Deploy once with a placeholder value for both, copy the real
-   URL Render gives you, then update both env vars to match and let it
-   redeploy. If you're pointing a custom domain at it instead (Render's
-   free tier supports this), use that domain instead of the `.onrender.com`
-   one.
-5. Run the database migration once, from your own machine, before (or
+   `render.yaml` (`DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET`) since
+   they're marked `sync: false` - meaning "ask for these, don't store them
+   in the repo." Use the same Neon connection strings from step 3 (or a
+   separate "production" Neon project, if you'd rather keep dev and prod
+   apart - Neon's free tier allows multiple projects), and a real random
+   value for `SESSION_SECRET` (`openssl rand -base64 32` - it doesn't need
+   to match your local `.env`'s value; each environment can have its own).
+   Unlike the Better Auth version this project started with, there's no
+   URL-dependent env var here, so there's no chicken-and-egg step where
+   you have to deploy once just to learn the URL before finishing
+   configuration - the PIN system doesn't care what domain it's served
+   from.
+4. Run the database migration once, from your own machine, before (or
    right after) the first deploy - Render Blueprints provision the
    service but don't run `prisma migrate deploy` for you. Make sure your
    local `.env` has `DATABASE_URL` and `DIRECT_URL` set to the same Neon
@@ -381,13 +380,13 @@ cold start - a fine trade for a tool used a few times a quarter).
    Windows Command Prompt, `$env:DATABASE_URL="..."` in PowerShell,
    `DATABASE_URL="..." npx prisma migrate deploy` in bash/zsh/macOS/Linux
    - rather than assuming the bash syntax works everywhere.)
-6. Seed the master catalog the same way, once - `.env` already has what
+5. Seed the master catalog the same way, once - `.env` already has what
    this needs, so it's just:
    ```bash
    npm run db:seed
    ```
-7. Create the first login the same way described in step 6 above, but
-   against your Render URL instead of `localhost:3000`.
+6. Visit your Render URL and enter the PIN - no account-creation step
+   needed, unlike the Better Auth version this project started with.
 
 **Prefer to self-host instead of using Render?** Nothing about the app
 requires Render specifically - run `npm run build` then `npm run start`

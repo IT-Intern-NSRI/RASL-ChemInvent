@@ -1,18 +1,16 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/auth-client";
 
 // PURE FRONTEND: The single login screen for the whole app - a centered
-// card with a "Username" field, a "Password" field, a "Sign in" button, and
-// an inline error message shown after a failed attempt. On success it
-// redirects to "/" (the startup screen). This is the only page in the app
-// an unauthenticated visitor can reach.
+// card with one PIN field and a "Sign in" button, and an inline error
+// message shown after an incorrect PIN. On success it redirects to "/"
+// (the startup screen). This is the only unauthenticated page other than
+// the login/logout API routes.
 
 export function LoginForm() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -21,12 +19,17 @@ export function LoginForm() {
     setErrorMessage(null);
     setSubmitting(true);
     try {
-      const { error } = await signIn.email({ email: username, password });
-      if (error) {
-        setErrorMessage("Incorrect username or password.");
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      });
+      if (!res.ok) {
+        setErrorMessage("Incorrect PIN.");
         return;
       }
       router.push("/");
+      router.refresh();
     } finally {
       setSubmitting(false);
     }
@@ -38,35 +41,21 @@ export function LoginForm() {
         <h1 className="mb-1 text-lg font-semibold text-slate-900">
           Digital Chemical Inventory
         </h1>
-        <p className="mb-6 text-sm text-slate-500">Sign in to continue</p>
+        <p className="mb-6 text-sm text-slate-500">Enter the PIN to continue</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="mb-1 block text-sm font-medium text-slate-700">
-              Username
+            <label htmlFor="pin" className="mb-1 block text-sm font-medium text-slate-700">
+              PIN
             </label>
             <input
-              id="username"
-              type="text"
-              autoComplete="username"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <input
-              id="password"
+              id="pin"
               type="password"
-              autoComplete="current-password"
+              autoComplete="off"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
             />
           </div>
@@ -82,7 +71,7 @@ export function LoginForm() {
             disabled={submitting}
             className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
           >
-            {submitting ? "Signing in..." : "Sign in"}
+            {submitting ? "Checking..." : "Sign in"}
           </button>
         </form>
       </div>

@@ -1,7 +1,7 @@
 // Pure wiring - see documents/route.ts for the pattern.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/pin-session";
 import { updateQuarterEntry } from "@/lib/services/entries";
 
 const patchSchema = z.object({
@@ -20,11 +20,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ documentId: string }> }
 ) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = patchSchema.parse(await request.json());
-  const entry = await updateQuarterEntry(body, session.user.id);
+  const entry = await updateQuarterEntry(body);
   return NextResponse.json(entry);
 }

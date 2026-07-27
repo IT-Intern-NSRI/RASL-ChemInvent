@@ -20,9 +20,5 @@ services:
         sync: false
       - key: DIRECT_URL
         sync: false
-      - key: BETTER_AUTH_SECRET
-        sync: false
-      - key: BETTER_AUTH_URL
-        sync: false
-      - key: NEXT_PUBLIC_BETTER_AUTH_URL
+      - key: SESSION_SECRET
         sync: false

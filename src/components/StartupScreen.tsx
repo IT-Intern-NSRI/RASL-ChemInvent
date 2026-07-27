@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { NewInventoryDialog } from "./NewInventoryDialog";
 import { DocumentList } from "./DocumentList";
-import { signOut } from "@/lib/auth-client";
 
 // PURE FRONTEND: The first screen a logged-in user sees. Shows two clear
 // choices - "Start New Inventory" (opens NewInventoryDialog) and "Continue
@@ -18,8 +17,9 @@ export function StartupScreen() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   async function handleSignOut() {
-    await signOut();
+    await fetch("/api/logout", { method: "POST" });
     router.push("/login");
+    router.refresh();
   }
 
   return (

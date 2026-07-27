@@ -3,15 +3,14 @@
 // src/lib/services/documents.ts is filled in, these routes work as-is.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/pin-session";
 import { listDocuments, createDocument } from "@/lib/services/documents";
 
 // GET /api/documents
-// Input: none (auth cookie only). Output: JSON array of
+// Input: none (session cookie only). Output: JSON array of
 // InventoryDocumentSummaryDTO - powers the "Continue Existing Inventory" list.
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const documents = await listDocuments();
@@ -27,11 +26,10 @@ const createDocumentSchema = z.object({
 // InventoryDocument (JSON), already snapshotted from the master catalog -
 // powers the "Start New Inventory" flow.
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = createDocumentSchema.parse(await request.json());
-  const document = await createDocument(body.year, session.user.id);
+  const document = await createDocument(body.year);
   return NextResponse.json(document, { status: 201 });
 }

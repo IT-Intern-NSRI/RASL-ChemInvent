@@ -118,20 +118,19 @@ export async function getDocumentById(documentId: string): Promise<InventoryDocu
   };
 }
 
-// def createDocument(year, createdById): Input is the calendar year for the
-// new inventory (e.g. 2027) and the id of the logged-in user starting it.
-// Output is the newly created InventoryDocument row. Side effect: snapshots
-// the current master catalog into DocSection/DocItem/QuarterEntry rows for
-// the new document, so later catalog edits never retroactively change a
-// past year's saved numbers.
-export async function createDocument(year: number, createdById: string) {
+// def createDocument(year): Input is the calendar year for the new
+// inventory (e.g. 2027). Output is the newly created InventoryDocument
+// row. Side effect: snapshots the current master catalog into
+// DocSection/DocItem/QuarterEntry rows for the new document, so later
+// catalog edits never retroactively change a past year's saved numbers.
+export async function createDocument(year: number) {
   const existing = await prisma.inventoryDocument.findUnique({ where: { year } });
   if (existing) {
     throw new Error(`An inventory for ${year} already exists.`);
   }
 
   const document = await prisma.inventoryDocument.create({
-    data: { year, createdById, status: "draft" },
+    data: { year, status: "draft" },
   });
 
   await snapshotCatalogIntoDocument(document.id);

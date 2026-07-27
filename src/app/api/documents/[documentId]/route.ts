@@ -1,7 +1,7 @@
 // Pure wiring - see documents/route.ts for the pattern.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/pin-session";
 import { getDocumentById, updateDocumentStatus } from "@/lib/services/documents";
 
 // GET /api/documents/:documentId
@@ -11,8 +11,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ documentId: string }> }
 ) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { documentId } = await params;
@@ -29,8 +28,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ documentId: string }> }
 ) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { documentId } = await params;

@@ -5,17 +5,13 @@
 // "TODO: implement". Everything in src/lib/services/* is written against
 // this exact shape.
 //
-// Two families of models:
-//  1. Auth tables (User, Session, Account, Verification) - the shape
-//     expected by Better Auth's Prisma adapter for plain email+password
-//     login. If you install a newer/older better-auth version, run
-//     `npx @better-auth/cli generate` and diff its suggestion against this
-//     file before trusting either one blindly - the exact field list has
-//     changed between major versions.
-//  2. Domain tables - a mutable "master catalog" (Lab / CatalogSection /
-//     CatalogItem), and an immutable per-year "document" that snapshots the
-//     catalog at creation time (InventoryDocument / DocSection / DocItem /
-//     QuarterEntry). See README.md ("Data model") for the reasoning.
+// Authentication is a single shared PIN (see README.md
+// "Authentication"), not individual accounts, so there are deliberately no
+// User/Session tables here - just the domain data: a mutable "master
+// catalog" (Lab / CatalogSection / CatalogItem), and an immutable per-year
+// "document" that snapshots the catalog at creation time (InventoryDocument
+// / DocSection / DocItem / QuarterEntry). See README.md ("Data model") for
+// the reasoning.
 
 datasource db {
   provider  = "postgresql"
@@ -33,64 +29,7 @@ generator client {
 }
 
 // ---------------------------------------------------------------------
-// Auth tables
-// ---------------------------------------------------------------------
-
-model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  sessions         Session[]
-  accounts         Account[]
-  createdDocuments InventoryDocument[] @relation("DocumentCreatedBy")
-  quarterEdits     QuarterEntry[]      @relation("QuarterEntryUpdatedBy")
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Account {
-  id                    String    @id @default(cuid())
-  userId                String
-  accountId             String
-  providerId            String
-  password              String?
-  accessToken           String?
-  refreshToken          String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Verification {
-  id         String   @id @default(cuid())
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-}
-
-// ---------------------------------------------------------------------
-// Domain: master catalog (mutable - the "living" chemical list)
+// Master catalog (mutable - the "living" chemical list)
 // ---------------------------------------------------------------------
 
 model Lab {
@@ -131,7 +70,7 @@ model CatalogItem {
 }
 
 // ---------------------------------------------------------------------
-// Domain: inventory documents (one per year - immutable catalog snapshot)
+// Inventory documents (one per year - immutable catalog snapshot)
 // ---------------------------------------------------------------------
 
 model InventoryDocument {
@@ -144,10 +83,8 @@ model InventoryDocument {
   issueDate    String   @default("15 August 2017")
   authorizedBy String?
 
-  createdById String
-  createdBy   User     @relation("DocumentCreatedBy", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   sections DocSection[]
 }
@@ -200,9 +137,7 @@ model QuarterEntry {
   currentInventory Float?
   forPurchase      Float?
 
-  updatedById String?
-  updatedBy   User?    @relation("QuarterEntryUpdatedBy", fields: [updatedById], references: [id])
-  updatedAt   DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
   @@unique([docItemId, quarter])
 }
