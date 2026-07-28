@@ -134,8 +134,14 @@ model QuarterEntry {
   docItem   DocItem @relation(fields: [docItemId], references: [id], onDelete: Cascade)
 
   quarter          Int // 1, 2, 3, or 4
-  currentInventory Float?
-  forPurchase      Float?
+  // Free text in the same "<count> x <amount><unit>" grammar as
+  // CatalogItem.quantityRaw / DocItem.quantityRaw, but allowing multiple
+  // comma-separated components (e.g. "1 x 1kg, 1 x 250g") so a physical
+  // stock split across several containers can be recorded exactly rather
+  // than forced into one number. See src/lib/quantity.ts for the
+  // parser/formatter this format is built around.
+  currentInventory String?
+  forPurchase      String?
 
   updatedAt DateTime @updatedAt
 

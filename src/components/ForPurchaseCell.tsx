@@ -1,21 +1,27 @@
 "use client";
-import { useState } from "react";
 import { computeForPurchaseSuggestion } from "@/lib/quantity";
 import { useUpdateEntry } from "@/hooks/useUpdateEntry";
+import { useInventoryStore } from "@/store/useInventoryStore";
+import { QuantityExpressionInput } from "./QuantityExpressionInput";
 
-// PURE FRONTEND: One "For Purchase" cell. Shows the saved/accepted value if
-// one has been entered; otherwise shows a computed suggestion as faint
-// placeholder text plus a small "Apply" button - per the "suggest, not
-// write" requirement, the suggested number is never saved automatically,
-// only when the user clicks Apply or types their own value.
+// PURE FRONTEND: One "For Purchase" cell. Shows the saved/accepted text if
+// one has been entered; otherwise shows a computed suggestion (in the same
+// "<count> x <amount><unit>" grammar as Current Inventory and the
+// Quarterly Stocking Qty column - see computeForPurchaseSuggestion) as
+// faint placeholder text plus a small "Apply" button - per the "suggest,
+// not write" requirement, the suggestion is never saved automatically,
+// only when the user clicks Apply or types their own value. Which of the
+// two suggestion conventions to use (fractional package multiples vs. a
+// plain leftover amount) comes from useInventoryStore, toggled globally
+// via PurchaseSuggestionFormatToggle.
 
 interface ForPurchaseCellProps {
   documentId: string;
   docItemId: string;
   quarter: 1 | 2 | 3 | 4;
-  value: number | null;
+  value: string | null;
   quantityRaw: string;
-  currentInventory: number | null;
+  currentInventory: string | null;
 }
 
 export function ForPurchaseCell({
@@ -27,39 +33,31 @@ export function ForPurchaseCell({
   currentInventory,
 }: ForPurchaseCellProps) {
   const updateEntry = useUpdateEntry(documentId);
-  const [draft, setDraft] = useState(value != null ? String(value) : "");
+  const suggestionFormat = useInventoryStore((s) => s.purchaseSuggestionFormat);
 
-  function getSuggestion(): number | null {
-    if (currentInventory == null) return null;
-    return computeForPurchaseSuggestion(quantityRaw, currentInventory);
-  }
+  const suggestion =
+    value == null
+      ? computeForPurchaseSuggestion(quantityRaw, currentInventory, suggestionFormat)
+      : null;
 
-  function handleApplySuggestion() {
-    const suggestion = getSuggestion();
-    if (suggestion == null) return;
-    setDraft(String(suggestion));
-    updateEntry.mutate({ docItemId, quarter, forPurchase: suggestion });
-  }
-
-  function handleManualBlur() {
-    const newValue = draft.trim() === "" ? null : Number(draft);
-    if (newValue !== null && Number.isNaN(newValue)) return;
-    if (newValue === value) return;
+  function handleSave(newValue: string | null) {
     updateEntry.mutate({ docItemId, quarter, forPurchase: newValue });
   }
 
-  const suggestion = value == null ? getSuggestion() : null;
+  function handleApplySuggestion() {
+    if (suggestion == null) return;
+    updateEntry.mutate({ docItemId, quarter, forPurchase: suggestion });
+  }
+
+  const hasCurrentInventory = currentInventory != null && currentInventory.trim() !== "";
 
   return (
     <div className="flex items-center gap-1">
-      <input
-        type="number"
-        min={0}
-        value={draft}
-        placeholder={suggestion != null ? String(suggestion) : undefined}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={handleManualBlur}
-        className="w-20 rounded border border-slate-200 px-2 py-1 text-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
+      <QuantityExpressionInput
+        value={value ?? ""}
+        placeholder={suggestion ?? undefined}
+        title="e.g. 0.5 x 500g"
+        onSave={handleSave}
       />
       {value == null && suggestion != null && (
         <button
@@ -71,7 +69,7 @@ export function ForPurchaseCell({
           Apply
         </button>
       )}
-      {value == null && suggestion == null && currentInventory != null && (
+      {value == null && suggestion == null && hasCurrentInventory && (
         <span className="text-xs text-slate-400" title="This quantity can't be auto-computed">
           manual
         </span>

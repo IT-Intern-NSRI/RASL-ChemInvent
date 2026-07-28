@@ -2,14 +2,16 @@ import { prisma } from "@/lib/prisma";
 import type { UpdateQuarterEntryInput } from "@/types";
 
 // def updateQuarterEntry(input): Input is which DocItem and quarter
-// changed, plus the new currentInventory and/or forPurchase value (either
-// can be omitted to leave that field untouched). Output is the updated
-// QuarterEntry row. Called on cell blur from the editable grid (the client
-// debounces this so every keystroke doesn't trigger a request).
+// changed, plus the new currentInventory and/or forPurchase text (either
+// can be omitted to leave that field untouched - each is free text in the
+// "<count> x <amount><unit>[, ...]" grammar described in
+// src/lib/quantity.ts). Output is the updated QuarterEntry row. Called on
+// cell blur from the editable grid (the client debounces this so every
+// keystroke doesn't trigger a request).
 export async function updateQuarterEntry(input: UpdateQuarterEntryInput) {
   const { docItemId, quarter } = input;
 
-  const data: { currentInventory?: number | null; forPurchase?: number | null } = {};
+  const data: { currentInventory?: string | null; forPurchase?: string | null } = {};
   if ("currentInventory" in input) data.currentInventory = input.currentInventory ?? null;
   if ("forPurchase" in input) data.forPurchase = input.forPurchase ?? null;
 

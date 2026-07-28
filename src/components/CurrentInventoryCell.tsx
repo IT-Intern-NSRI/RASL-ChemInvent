@@ -1,16 +1,18 @@
 "use client";
-import { useState } from "react";
 import { useUpdateEntry } from "@/hooks/useUpdateEntry";
+import { QuantityExpressionInput } from "./QuantityExpressionInput";
 
-// PURE FRONTEND: One editable numeric cell for a chemical's "Current
-// Inventory" in one quarter. Shows the saved value, lets the user type a
-// new number, and saves on blur.
+// PURE FRONTEND: One editable cell for a chemical's "Current Inventory" in
+// one quarter - free text in the "<count> x <amount><unit>[, ...]" grammar
+// (e.g. "1 x 1kg, 1 x 250g" for a stock split across containers), saved on
+// blur. See QuantityExpressionInput for the input itself, including its
+// structured-builder popover.
 
 interface CurrentInventoryCellProps {
   documentId: string;
   docItemId: string;
   quarter: 1 | 2 | 3 | 4;
-  value: number | null;
+  value: string | null;
 }
 
 export function CurrentInventoryCell({
@@ -20,23 +22,16 @@ export function CurrentInventoryCell({
   value,
 }: CurrentInventoryCellProps) {
   const updateEntry = useUpdateEntry(documentId);
-  const [draft, setDraft] = useState(value != null ? String(value) : "");
 
-  function handleBlur() {
-    const newValue = draft.trim() === "" ? null : Number(draft);
-    if (newValue !== null && Number.isNaN(newValue)) return;
-    if (newValue === value) return;
+  function handleSave(newValue: string | null) {
     updateEntry.mutate({ docItemId, quarter, currentInventory: newValue });
   }
 
   return (
-    <input
-      type="number"
-      min={0}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={handleBlur}
-      className="w-20 rounded border border-slate-200 px-2 py-1 text-sm focus:border-slate-500 focus:outline-none"
+    <QuantityExpressionInput
+      value={value ?? ""}
+      title="e.g. 1 x 1kg, 1 x 250g"
+      onSave={handleSave}
     />
   );
 }

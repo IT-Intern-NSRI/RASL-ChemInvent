@@ -7,8 +7,8 @@ import { updateQuarterEntry } from "@/lib/services/entries";
 const patchSchema = z.object({
   docItemId: z.string(),
   quarter: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
-  currentInventory: z.number().nullable().optional(),
-  forPurchase: z.number().nullable().optional(),
+  currentInventory: z.string().nullable().optional(),
+  forPurchase: z.string().nullable().optional(),
 });
 
 // PATCH /api/documents/:documentId/entries

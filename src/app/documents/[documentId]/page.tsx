@@ -2,13 +2,15 @@ import Link from "next/link";
 import { InventoryTable } from "@/components/InventoryTable";
 import { QuarterVisibilityToggle } from "@/components/QuarterVisibilityToggle";
 import { ChemicalSearchBox } from "@/components/ChemicalSearchBox";
+import { PurchaseSuggestionFormatToggle } from "@/components/PurchaseSuggestionFormatToggle";
 import { SaveStatusBadge } from "@/components/SaveStatusBadge";
 
 // PURE FRONTEND (server component): The main editable-inventory page for
 // one document/year. Composes the filter controls
-// (QuarterVisibilityToggle, ChemicalSearchBox), a SaveStatusBadge, a link
-// to the print view, a link that hits /api/documents/:id/export to
-// download the .docx, and the InventoryTable itself.
+// (QuarterVisibilityToggle, ChemicalSearchBox, PurchaseSuggestionFormatToggle),
+// a SaveStatusBadge, a link to the print view, a link that hits
+// /api/documents/:id/export to download the .docx, and the InventoryTable
+// itself.
 
 export default async function DocumentPage({
   params,
@@ -45,6 +47,7 @@ export default async function DocumentPage({
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <QuarterVisibilityToggle />
         <ChemicalSearchBox />
+        <PurchaseSuggestionFormatToggle />
       </div>
 
       <InventoryTable documentId={documentId} />

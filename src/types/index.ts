@@ -16,10 +16,20 @@ export interface ParsedQuantity {
   unitLabel: string | null; // e.g. "g", "L", "pcs", "box"
 }
 
+// The two ways computeForPurchaseSuggestion can express a shortfall/excess,
+// user-selectable via a toggle in the toolbar (see useInventoryStore):
+//   - "packageMultiple": as a (possibly fractional) count of the catalog's
+//     own package size, e.g. target "3 x 500g" with a 250g shortfall reads
+//     "0.5 x 500g" - directly comparable to the Quarterly Stocking Qty
+//     column, and tells you how many of the actual purchasable unit to buy.
+//   - "plainAmount": as a single leftover amount in the target's base unit,
+//     e.g. "1 x 250g" - the raw difference, independent of package size.
+export type PurchaseSuggestionFormat = "packageMultiple" | "plainAmount";
+
 export interface QuarterEntryDTO {
   quarter: 1 | 2 | 3 | 4;
-  currentInventory: number | null;
-  forPurchase: number | null;
+  currentInventory: string | null;
+  forPurchase: string | null;
   updatedAt: string | null;
 }
 
@@ -64,8 +74,8 @@ export interface InventoryDocumentFullDTO extends InventoryDocumentSummaryDTO {
 export interface UpdateQuarterEntryInput {
   docItemId: string;
   quarter: 1 | 2 | 3 | 4;
-  currentInventory?: number | null;
-  forPurchase?: number | null;
+  currentInventory?: string | null;
+  forPurchase?: string | null;
 }
 
 export interface CreateDocumentInput {
