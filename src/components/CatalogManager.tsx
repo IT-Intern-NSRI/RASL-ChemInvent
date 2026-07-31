@@ -37,6 +37,7 @@ export function CatalogManager() {
                 <th className="px-2 py-2">Catalog No.</th>
                 <th className="px-2 py-2">Quarterly Stocking Qty</th>
                 <th className="px-2 py-2 text-center">Footnote *</th>
+                <th className="px-2 py-2" />
               </tr>
             </thead>
             <tbody>

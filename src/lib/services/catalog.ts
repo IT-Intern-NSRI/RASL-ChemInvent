@@ -139,3 +139,21 @@ export async function updateCatalogItem(itemId: string, input: UpdateCatalogItem
     },
   });
 }
+
+// def deleteCatalogItem(itemId): Input is an existing CatalogItem's id.
+// Output is the deleted CatalogItem row. Only removes it from the master
+// catalog - any InventoryDocument that already snapshotted this chemical
+// keeps its own DocItem row untouched (schema.prisma sets
+// DocItem.catalogItemId to SET NULL on delete specifically so a past
+// year's saved document survives its source catalog row disappearing -
+// see "Data model" in README.md). The only visible effect elsewhere is
+// that DocItem.catalogItem traceability link goes null for any document
+// that referenced this row; the document's own name/brand/catalogNo/
+// quantityRaw/footnote/quarter numbers are copies, not references, so
+// they're unaffected either way.
+export async function deleteCatalogItem(itemId: string) {
+  return prisma.catalogItem.delete({
+    where: { id: itemId },
+  });
+}
+

@@ -63,3 +63,23 @@ export function useUpdateCatalogItem() {
     },
   });
 }
+
+// def useDeleteCatalogItem(): Output is a TanStack Mutation whose
+// .mutate(itemId: string) permanently removes one chemical from the
+// master catalog and refreshes the catalog query - called from
+// CatalogItemRow's delete control, after the user confirms. Has no effect
+// on any InventoryDocument that already snapshotted this chemical (see
+// deleteCatalogItem in src/lib/services/catalog.ts).
+export function useDeleteCatalogItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (itemId: string) => {
+      const res = await fetch(`/api/catalog/items/${itemId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete chemical");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+    },
+  });
+}

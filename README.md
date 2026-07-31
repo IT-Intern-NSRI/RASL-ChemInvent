@@ -134,7 +134,7 @@ future revision's categories get.
 | For Purchase suggestion (not auto-written) | `src/lib/quantity.ts` (`computeForPurchaseSuggestion` - parses Current's components, converts mass/volume units to a common base, and diffs against the target), called client-side from `ForPurchaseCell.tsx`; only written to the database when the user clicks "Apply" or types a value themselves. Expressed either as fractional multiples of the catalog's own package size (`"0.5 x 500g"`) or as a plain leftover amount (`"1 x 250g"`) - toggle in `PurchaseSuggestionFormatToggle.tsx`, state in `useInventoryStore` |
 | Export to the original .docx layout | `src/lib/services/export.ts` (`generateInventoryDocx`) — built programmatically with the `docx` library, see below |
 | Single-credential login | `src/lib/pin-session.ts` + `middleware.ts` protecting every route except `/login` and the login/logout API routes — see "Authentication" below |
-| Add / edit chemicals in the master catalog | `catalog/page.tsx` → `CatalogManager.tsx` (+ `CatalogSectionGroup.tsx`, `CatalogItemRow.tsx`, `AddCatalogItemForm.tsx`), backed by `createCatalogItem` / `updateCatalogItem` in `src/lib/services/catalog.ts` and `POST /api/catalog/items`, `PATCH /api/catalog/items/:itemId` |
+| Add / edit / delete chemicals in the master catalog | `catalog/page.tsx` → `CatalogManager.tsx` (+ `CatalogSectionGroup.tsx`, `CatalogItemRow.tsx`, `AddCatalogItemForm.tsx`), backed by `createCatalogItem` / `updateCatalogItem` / `deleteCatalogItem` in `src/lib/services/catalog.ts` and `POST /api/catalog/items`, `PATCH /api/catalog/items/:itemId`, `DELETE /api/catalog/items/:itemId`. Deleting is inline-confirm (no native `confirm()` popup), same pattern as deleting an old inventory below. |
 | Delete an old inventory | `DocumentList.tsx` (inline confirm, no native `confirm()` popup), backed by `deleteDocument` in `src/lib/services/documents.ts` and `DELETE /api/documents/:documentId` — relies on the `onDelete: Cascade` relations already in `schema.prisma` to clean up that document's sections/items/quarter entries in one call |
 
 ---
@@ -405,12 +405,17 @@ either way.
 - Role-based permissions (viewer vs. editor vs. an "authorize/sign-off"
   step) — the `status: "draft" | "final"` field on `InventoryDocument`
   leaves room for this later without a schema change.
-- Deleting a chemical from the master catalog, or creating/renaming
-  categories (`CatalogSection`s) and labs themselves — the "manage master
-  catalog" screen (`/catalog`) currently only adds and edits chemicals
-  within *existing* sections. `createCatalogItem`/`updateCatalogItem` in
-  `src/lib/services/catalog.ts` follow the same pattern a `deleteCatalogItem`
-  or section-level CRUD could reuse when needed.
+- Creating or renaming categories (`CatalogSection`s) and labs themselves —
+  the "manage master catalog" screen (`/catalog`) adds, edits, and deletes
+  chemicals within *existing* sections, but the sections/labs themselves
+  are still fixed at seed time. `createCatalogItem`/`updateCatalogItem`/
+  `deleteCatalogItem` in `src/lib/services/catalog.ts` follow a pattern
+  section-level CRUD could reuse when needed.
+- Deleting a chemical from the master catalog does not warn you if that
+  chemical still appears with saved numbers in an in-progress (draft)
+  document — by design (see "Data model"), the document keeps its own
+  copy regardless, so nothing is lost, but there's currently no
+  "used in N documents" hint on the delete confirmation.
 - Offline resilience (caching in-flight edits in IndexedDB in case of a
   dropped connection) — every edit currently assumes a live connection to
   save.

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAuthenticated } from "@/lib/pin-session";
-import { updateCatalogItem } from "@/lib/services/catalog";
+import { updateCatalogItem, deleteCatalogItem } from "@/lib/services/catalog";
 
 const updateItemSchema = z.object({
   name: z.string().min(1).optional(),
@@ -29,4 +29,22 @@ export async function PATCH(
   const body = updateItemSchema.parse(await request.json());
   const item = await updateCatalogItem(itemId, body);
   return NextResponse.json(item);
+}
+
+// DELETE /api/catalog/items/:itemId
+// Input: itemId from the URL. Output: 204 with no body on success.
+// Permanently removes this chemical from the master catalog - called from
+// the delete control on CatalogItemRow, after the user confirms. Does not
+// touch any InventoryDocument that already snapshotted this chemical (see
+// deleteCatalogItem for why that's safe).
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ itemId: string }> }
+) {
+  if (!(await isAuthenticated(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { itemId } = await params;
+  await deleteCatalogItem(itemId);
+  return new NextResponse(null, { status: 204 });
 }
